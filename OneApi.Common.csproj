@@ -1,0 +1,18 @@
+﻿<Project>
+  <PropertyGroup>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+
+  <Sdk Name="Microsoft.NET.Sdk" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Description>OneApi cross-service shared primitives: LLM invoke routing, usage kinds/units/billing types, token/media usage jsonb shapes, stream usage keys, and codecs. Single source of truth across Meeko.DemuxAi and Tavern.Gateway.</Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>
