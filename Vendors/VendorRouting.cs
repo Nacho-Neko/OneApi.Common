@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace OneApi.Common.Vendors;
 
 /// <summary>
-/// 模型路由标识的公共规范（唯一定义处）。DemuxAi 目录域（vendors / model_aliases）与
+/// 模型路由标识的公共规范（唯一定义处）。Demux 目录域（vendors / model_aliases）与
 /// Tavern 会话 / 用量表都以此为准，防止各服务对 slug / 模型名各写一套长度与格式规则。
 /// <list type="bullet">
 ///   <item><b>渠道 slug</b>（vendor_slug / queue_group / vendor_plug / vendor_key）：

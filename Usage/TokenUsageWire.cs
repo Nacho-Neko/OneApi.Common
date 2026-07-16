@@ -2,7 +2,7 @@ namespace OneApi.Common.Usage;
 
 /// <summary>
 /// 公共 <see cref="TokenUsage"/>（input/output）与历史 wire 命名（prompt/completion）之间的桥接。
-/// DemuxAi <c>TokenUsageBreakdown</c>、Tavern <c>TavernModelUsage.PromptTokens</c> 等
+/// Demux <c>TokenUsageBreakdown</c>、Tavern <c>TavernModelUsage.PromptTokens</c> 等
 /// MessagePack 契约保留旧字段名，业务层经此转换后再走 <see cref="UsageJsonCodec"/>。
 /// </summary>
 public static class TokenUsageWire

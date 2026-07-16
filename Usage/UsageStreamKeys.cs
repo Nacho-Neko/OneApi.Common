@@ -49,7 +49,7 @@ public static class UsageStreamKeys
     private static int ToInt(long value) => (int)Math.Min(Math.Max(0, value), int.MaxValue);
 
     /// <summary>
-    /// wire 命名（PromptTokens / CompletionTokens，DemuxAi RPC / Tavern 计费 DTO）→ 公共 <see cref="TokenUsage"/>。
+    /// wire 命名（PromptTokens / CompletionTokens，Demux RPC / Tavern 计费 DTO）→ 公共 <see cref="TokenUsage"/>。
     /// </summary>
     public static TokenUsage FromPromptCompletion(int promptTokens, int completionTokens, int reasoningTokens = 0) =>
         new(promptTokens, completionTokens, reasoningTokens);

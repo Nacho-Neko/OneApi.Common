@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace OneApi.Common.Usage;
 
 /// <summary>
-/// usage json 编解码的唯一实现。DemuxAi 的 <c>usage_logs.usage</c> 与
+/// usage json 编解码的唯一实现。Demux 的 <c>usage_logs.usage</c> 与
 /// Tavern 的 <c>chat_message_usages.usage_json</c> 都经此序列化，保证两边形状永远一致。
 /// </summary>
 public static class UsageJsonCodec

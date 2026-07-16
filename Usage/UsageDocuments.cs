@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 namespace OneApi.Common.Usage;
 
 // usage json 的标准形状（jsonb 落库 / API 透传均用此形）。
-// token 形与 DemuxAi usage_logs.usage（LogUsageDto 系）字段名、嵌套、顺序完全一致；
-// 媒体形与 DemuxAi per_image / per_video / per_audio_minute 的用量 DTO 语义一致。
+// token 形与 Demux usage_logs.usage（LogUsageDto 系）字段名、嵌套、顺序完全一致；
+// 媒体形与 Demux per_image / per_video / per_audio_minute 的用量 DTO 语义一致。
 
 /// <summary>token 形 usage json：{totalTokens, input{…}, output{…}}。</summary>
 public sealed class TokenUsageDocument

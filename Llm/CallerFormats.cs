@@ -1,7 +1,7 @@
 namespace OneApi.Common.Llm;
 
 /// <summary>
-/// 调用方协议格式常量。派发层（DemuxAi.Gateway <c>DispatchCommand.CallerFormat</c>）与
+/// 调用方协议格式常量。派发层（Demux.Gateway <c>DispatchCommand.CallerFormat</c>）与
 /// 各 Provider 的 <c>NativeFormat</c> 对齐；决定原生直通与 conversationId 提取方式。
 /// </summary>
 public static class CallerFormats

@@ -1,7 +1,7 @@
 namespace OneApi.Common.Usage;
 
 /// <summary>
-/// DemuxAi 模型定价计费类型（<c>model_pricings.billing_type</c>）常量。
+/// Demux 模型定价计费类型（<c>model_pricings.billing_type</c>）常量。
 /// usage_json 形状与 commit 计量方式均由此决定。
 /// </summary>
 public static class BillingTypes
