@@ -11,8 +11,16 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Description>OneApi cross-service shared primitives: LLM invoke routing, usage kinds/units/billing types, token/media usage jsonb shapes, stream usage keys, and codecs. Single source of truth across Meeko.Demux and Tavern.Gateway.</Description>
+    <Description>OneApi cross-service shared primitives: LLM invoke routing, usage kinds/units/billing types, dispatch wire DTOs/error codes, catalog slug parsing, and caller-facing Gateway RPC helpers. Single source of truth across Meeko.Demux and Tavern.Gateway.</Description>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
+    <PackageReference Include="MessagePack" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' != 'true'">
+    <PackageReference Include="MessagePack" Version="3.1.7" />
+  </ItemGroup>
 
 </Project>
