@@ -32,11 +32,28 @@ public sealed class DispatchCommand
     [Key(3)] public WireFormat CallerFormat { get; set; }
 
     /// <summary>
-    /// conversationId 第一层提示（调用方从 <c>x-conversation-id</c> 请求头取得）。
-    /// 为空时网关继续走 prompt-cache key 提取 → 会话链推导的瀑布。
+    /// 会话 id 第一层提示（调用方从 <c>x-conversation-id</c> 请求头取得）。
+    /// 为空时网关只再看 body 里协议自带的显式会话字段（Anthropic
+    /// <c>metadata.user_id</c>），<b>不会</b>从 prompt 内容推导会话身份。
     /// </summary>
     [Key(4)] public string? ConversationIdHint { get; set; }
 
     /// <summary>调用方请求关联 id（trace id），仅用于日志串联。</summary>
     [Key(5)] public string? RequestId { get; set; }
+
+    /// <summary>
+    /// prompt-cache 亲和键的隔离域：调用方身份（Demux 传
+    /// <c>AiTokenResolution.TokenId</c>）。只参与亲和键派生，<b>不进</b>
+    /// <c>TaskEnvelope</c>、也永不出现在上游会话字段里。
+    ///
+    /// <para><b>为什么必须有</b>：无显式会话 id 时亲和键回落到「system + tools 指纹」。
+    /// 角色扮演场景的 system 就是社区公共角色卡，同一张卡的所有用户指纹<b>恒等</b>，
+    /// 于是全部流量挤向同一账号的少数私有槽位（Claude 每账号仅 2 个），溢出后互相
+    /// 覆盖 Redis 映射，结果谁都命中不了。掺入调用方身份把「同卡不同人」拆到不同
+    /// 账号，同时保留「同人同卡」的跨轮亲和。</para>
+    ///
+    /// <para>MessagePack 数组格式下新增末位 Key 双向兼容：旧网关跳过多出来的元素，
+    /// 新网关收到旧调用方的命令时该字段为 <c>null</c>（退化为无隔离域）。</para>
+    /// </summary>
+    [Key(6)] public string? AffinityScope { get; set; }
 }
