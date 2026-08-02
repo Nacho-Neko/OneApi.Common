@@ -43,7 +43,7 @@ public sealed class DispatchCommand
 
     /// <summary>
     /// prompt-cache 亲和键的隔离域：调用方身份（Demux 传
-    /// <c>AiTokenResolution.TokenId</c>）。只参与亲和键派生，<b>不进</b>
+    /// <c>AccessTokenResolution.TokenId</c>）。只参与亲和键派生，<b>不进</b>
     /// <c>TaskEnvelope</c>、也永不出现在上游会话字段里。
     ///
     /// <para><b>为什么必须有</b>：无显式会话 id 时亲和键回落到「system + tools 指纹」。

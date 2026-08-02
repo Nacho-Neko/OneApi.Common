@@ -28,7 +28,7 @@ public sealed class DispatchStreamFrame
 
     // ── Claim 帧 ────────────────────────────────────────────────────────────
     [Key(1)] public string? TaskId { get; set; }
-    /// <summary>认领 worker 实例 id（计费 ChannelIdExternal 来源）。</summary>
+    /// <summary>认领 worker 实例 id（仅用于链路追踪 tag）。</summary>
     [Key(2)] public string? InstanceId { get; set; }
     [Key(3)] public string? Subject { get; set; }
     /// <summary>网关瀑布解析出的 conversationId。</summary>

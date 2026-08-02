@@ -28,7 +28,7 @@ public sealed class DispatchReply
 
     // ── 认领 / 归因（成功认领后填充） ───────────────────────────────────────
     [Key(6)] public string? TaskId { get; set; }
-    /// <summary>认领本次任务的 worker 实例 id（计费的 ChannelIdExternal 来源）。</summary>
+    /// <summary>认领本次任务的 worker 实例 id（仅用于链路追踪 tag）。</summary>
     [Key(7)] public string? InstanceId { get; set; }
     [Key(8)] public string? Subject { get; set; }
 
