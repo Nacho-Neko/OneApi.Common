@@ -4,7 +4,7 @@ namespace OneApi.Common.Usage;
 /// 一次 token 计量调用的原始计数（流式链路 / 上游响应累计），
 /// 写库前由 <see cref="UsageJsonCodec"/> 折叠为标准 usage json。
 /// 与 Demux 的 <c>TokenUsageBreakdown</c>（wire 契约）字段语义一一对应：
-/// Prompt→Input、Completion→Output、Cached→CachedRead、Audio→InputAudio。
+/// Prompt→Input、Completion→Output、CachedRead/CachedWrite、Audio→InputAudio。
 /// </summary>
 public sealed record TokenUsage(
     int InputTokens = 0,

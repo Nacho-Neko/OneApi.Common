@@ -12,12 +12,14 @@ public static class TokenUsageWire
         int completion,
         int reasoning = 0,
         int cachedRead = 0,
+        int cachedWrite = 0,
         int inputAudio = 0) =>
         new(
             InputTokens: Math.Max(0, prompt),
             OutputTokens: Math.Max(0, completion),
             ReasoningTokens: Math.Max(0, reasoning),
             CachedReadTokens: Math.Max(0, cachedRead),
+            CachedWriteTokens: Math.Max(0, cachedWrite),
             InputAudioTokens: Math.Max(0, inputAudio));
 
     public static (int PromptTokens, int CompletionTokens) ToPromptCompletion(TokenUsage usage) =>
