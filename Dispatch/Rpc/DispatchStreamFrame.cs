@@ -28,7 +28,7 @@ public sealed class DispatchStreamFrame
 
     // ── Claim 帧 ────────────────────────────────────────────────────────────
     [Key(1)] public string? TaskId { get; set; }
-    /// <summary>认领 worker 实例 id（仅用于链路追踪 tag）。</summary>
+    /// <summary>认领本次任务的 Provider 进程 id（yaml Instance.Id）。</summary>
     [Key(2)] public string? InstanceId { get; set; }
     [Key(3)] public string? Subject { get; set; }
     /// <summary>网关瀑布解析出的 conversationId。</summary>
@@ -48,4 +48,7 @@ public sealed class DispatchStreamFrame
     [Key(9)] public string? ErrorCode { get; set; }
     [Key(10)] public string? ErrorMessage { get; set; }
     [Key(11)] public Dictionary<string, string>? ErrorParams { get; set; }
+
+    /// <summary>实际执行账号（<c>AccountId.ToString("N")</c>），仅 Claim 帧填充。</summary>
+    [Key(12)] public string? AccountKey { get; set; }
 }

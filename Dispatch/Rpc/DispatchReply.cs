@@ -28,7 +28,7 @@ public sealed class DispatchReply
 
     // ── 认领 / 归因（成功认领后填充） ───────────────────────────────────────
     [Key(6)] public string? TaskId { get; set; }
-    /// <summary>认领本次任务的 worker 实例 id（仅用于链路追踪 tag）。</summary>
+    /// <summary>认领本次任务的 Provider 进程 id（yaml Instance.Id）。</summary>
     [Key(7)] public string? InstanceId { get; set; }
     [Key(8)] public string? Subject { get; set; }
 
@@ -36,6 +36,9 @@ public sealed class DispatchReply
     [Key(9)] public string? ConversationId { get; set; }
     /// <summary>conversationId 的来源层（header / bodyKey / chain 等），仅用于日志。</summary>
     [Key(10)] public string? ConversationSource { get; set; }
+
+    /// <summary>实际执行账号（<c>AccountId.ToString("N")</c>），供亲和写回与归因。</summary>
+    [Key(11)] public string? AccountKey { get; set; }
 }
 
 /// <summary>派发错误详情；Code/Params 供调用方走本地化文案。</summary>
