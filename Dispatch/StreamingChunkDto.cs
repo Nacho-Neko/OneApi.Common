@@ -24,8 +24,11 @@ public partial class StreamingChunkDto
     [Key(12)] public Dictionary<string, string>? ErrorParams { get; set; }
 
     /// <summary>
-    /// Opaque cryptographic signature attached to a reasoning/thinking block by
-    /// the upstream provider (Anthropic signature, Gemini thoughtSignature).
+    /// Opaque cryptographic signature the upstream provider attached to this block
+    /// (Anthropic <c>thinking.signature</c>, Gemini <c>thoughtSignature</c>). Set on
+    /// <see cref="StreamingContentType.Thinking"/> chunks and — for Gemini 3, which
+    /// signs the <c>functionCall</c> part and validates it on replay — on
+    /// <see cref="StreamingContentType.FunctionCall"/> chunks as well.
     /// </summary>
     [Key(13)] public string? ReasoningSignature { get; set; }
 }

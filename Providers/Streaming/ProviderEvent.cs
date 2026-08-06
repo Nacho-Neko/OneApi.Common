@@ -24,6 +24,12 @@ public class ProviderEvent
     [JsonPropertyName("isLastThinkingChunk")]
     public bool IsLastThinkingChunk { get; set; }
 
+    /// <summary>
+    /// Opaque provider signature for the block this event carries — an Anthropic
+    /// <c>thinking.signature</c> or a Gemini <c>thoughtSignature</c>. Set on
+    /// <c>thinking</c> events and, for Gemini 3, on <c>tool_start</c>: the signature
+    /// rides on the <c>functionCall</c> part and must be replayed there next turn.
+    /// </summary>
     [JsonPropertyName("thinkingSignature")]
     public string? ThinkingSignature { get; set; }
 
