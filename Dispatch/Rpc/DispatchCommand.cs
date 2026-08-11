@@ -56,4 +56,19 @@ public sealed class DispatchCommand
     /// 新网关收到旧调用方的命令时该字段为 <c>null</c>（退化为无隔离域）。</para>
     /// </summary>
     [Key(6)] public string? AffinityScope { get; set; }
+
+    /// <summary>
+    /// 调用方身份，由 edge 鉴权后填入；内网调用与旧版 edge 为 <c>null</c>。
+    ///
+    /// <para>紧挨 <see cref="AffinityScope"/> 声明是因为两者都描述「谁在调用」，
+    /// 但用途不同、且<b>不能互相替代</b>：AffinityScope 是 prompt-cache 亲和的加盐域
+    /// （换成 keyUid 派生会让存量亲和键全部 rehash，白扔一个 PromptCacheTtl 周期的上游
+    /// 缓存），本字段则是给抓获规则与遥测关联用的真实身份。</para>
+    ///
+    /// <para><b>Key 号只能是 7。</b> 本类型是 MessagePack 数组格式，<c>Key(n)</c> 就是
+    /// 数组下标而不是标签——插到中间会让其后所有字段整体错位，而错位是<b>静默</b>的：
+    /// 未升级的进程照样解析成功，只是把 PayloadJson 当成 CallerFormat 之类。
+    /// 追加到末位则双向兼容：旧接收方跳过多出来的元素，新接收方收到旧命令时此项为 null。</para>
+    /// </summary>
+    [Key(7)] public CallerAccount? CallerAccount { get; set; }
 }
