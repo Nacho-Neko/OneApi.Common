@@ -13,6 +13,7 @@ public static class ModelVariantTokens
     public const string EffortMedium    = "-medium";
     public const string EffortHigh      = "-high";
     public const string EffortLow       = "-low";
+    public const string EffortMinimal   = "-minimal";
     public const string EffortMax       = "-max";
     public const string EffortNone      = "-none";
 
@@ -23,6 +24,7 @@ public static class ModelVariantTokens
         EffortMedium,
         EffortHigh,
         EffortLow,
+        EffortMinimal,
         EffortMax,
         EffortNone,
     ];
