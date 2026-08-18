@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace OneApi.Common.Usage;
@@ -8,7 +9,10 @@ namespace OneApi.Common.Usage;
 /// </summary>
 public static class UsageJsonCodec
 {
-    private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web)
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     // ── token 形（chat / wake / embedding / tool）──────────────────────────
 
