@@ -107,7 +107,31 @@ public sealed record DumpPolicyDoc
 
     [JsonPropertyName("rules")] public DumpRuleDoc[] Rules { get; init; } = [];
 
+    /// <summary>
+    /// 错误触发的请求抓获。不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——
+    /// 请求字节本来就活到调用结束，不必武装流式缓冲。
+    /// 字段缺失时网关用内置默认（开；400/403/422、<c>upstream_error</c>、<c>Forbidden</c>）。
+    /// 显式 <c>{"enabled":false}</c> 关掉。
+    /// </summary>
+    [JsonPropertyName("onError")] public DumpOnErrorDoc? OnError { get; init; }
+
     [JsonPropertyName("updatedAt")] public DateTimeOffset? UpdatedAt { get; init; }
+}
+
+/// <summary>
+/// 按错误内容决定要不要把这次请求的荷载写入遥测。维度之间为「或」；
+/// 某一维空数组表示「用网关内置默认」，三维都空则三维都用默认。
+/// </summary>
+public sealed record DumpOnErrorDoc
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; init; } = true;
+
+    [JsonPropertyName("statusCodes")] public int[] StatusCodes { get; init; } = [];
+
+    [JsonPropertyName("errorCodes")] public string[] ErrorCodes { get; init; } = [];
+
+    /// <summary>对响应原文做子串匹配，不解析协议。</summary>
+    [JsonPropertyName("messages")] public string[] Messages { get; init; } = [];
 }
 
 /// <summary>
