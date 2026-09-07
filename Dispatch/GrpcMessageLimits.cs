@@ -6,5 +6,5 @@ namespace OneApi.Common.Dispatch;
 /// </summary>
 public static class GrpcMessageLimits
 {
-    public const int MaxBytes = 8 * 1024 * 1024;
+    public const int MaxBytes = 32 * 1024 * 1024;
 }
