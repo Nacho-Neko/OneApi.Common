@@ -11,9 +11,15 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Description>OneApi cross-service shared primitives: LLM invoke routing, usage kinds/units/billing types, dispatch wire DTOs/error codes, Edge ↔ Gateway MagicOnion dispatch RPC (ILlmDispatchService), catalog slug parsing. Single source of truth across OneApi.Gateway, Meeko.Demux and Tavern.Gateway.</Description>
+    <Description>OneApi cross-service shared primitives: LLM invoke routing, usage kinds/units/billing types, dispatch wire DTOs/error codes, Edge ↔ Gateway MagicOnion dispatch RPC (ILlmDispatchService), catalog slug parsing, local Claude token counting. Single source of truth across OneApi.Gateway, Meeko.Demux and Tavern.Gateway.</Description>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reverse-engineered Claude 3+/4.x vocabulary (ctoc, 38,360 API-verified tokens),
+         gzipped JSON string array. Consumed by ClaudeTokenCounter. -->
+    <EmbeddedResource Include="Tokenization\ClaudeVocab.json.gz" LogicalName="OneApi.Common.Tokenization.ClaudeVocab.json.gz" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
     <PackageReference Include="MagicOnion.Abstractions" />
