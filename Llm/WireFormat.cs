@@ -3,7 +3,7 @@
 /// <summary>
 /// 协议格式的规范表示。自家服务之间的契约（<c>DispatchCommand</c>、<c>TaskEnvelope</c>
 /// 及之后的派发链路）一律用本枚举，不传自由字符串。字符串形式
-/// （<see cref="CallerFormats"/>）只留给取值域本就超出这四种的外部边界：HTTP 头、
+/// （<see cref="CallerFormats"/>）只留给取值域本就超出这些枚举成员的外部边界：HTTP 头、
 /// Consul catalog JSON、compat 账号自填的 protocol、provider 私有的 NativeFormat
 /// （<c>"cursor"</c> / <c>"kiro"</c> 之类）。边界解析用 <see cref="WireFormats.TryParse"/>：
 /// 未知字符串在边界就地拒绝或降级，内部不可能出现未定义值。
@@ -19,11 +19,17 @@ public enum WireFormat : byte
     /// <summary>OpenAI Responses API（"openai.responses"）。</summary>
     OpenAiResponses = 2,
 
+    /// <summary>OpenAI Images generations（"openai.images"）。</summary>
+    OpenAiImages = 3,
+
     /// <summary>Anthropic Messages（"anthropic"）。</summary>
-    Anthropic = 3,
+    Anthropic = 4,
 
     /// <summary>Google Gemini generateContent（"gemini"）。</summary>
-    Gemini = 4,
+    Gemini = 5,
+
+    /// <summary>NovelAI generate-image（"novelai"）。</summary>
+    NovelAi = 6,
 }
 
 /// <summary><see cref="WireFormat"/> 与边界字符串（<see cref="CallerFormats"/>）的互转。</summary>
@@ -43,8 +49,10 @@ public static class WireFormats
         {
             "openai.chat" or "openai-chat" or "openai" => WireFormat.OpenAiChat,
             "openai.responses" or "openai-responses" => WireFormat.OpenAiResponses,
+            "openai.images" or "openai-images" or "images" => WireFormat.OpenAiImages,
             "anthropic" or "claude" => WireFormat.Anthropic,
             "gemini" or "google" => WireFormat.Gemini,
+            "novelai" or "nai" => WireFormat.NovelAi,
             _ => null,
         };
     }
@@ -57,8 +65,10 @@ public static class WireFormats
     {
         WireFormat.OpenAiChat => CallerFormats.OpenAiChat,
         WireFormat.OpenAiResponses => CallerFormats.OpenAiResponses,
+        WireFormat.OpenAiImages => CallerFormats.OpenAiImages,
         WireFormat.Anthropic => CallerFormats.Anthropic,
         WireFormat.Gemini => CallerFormats.Gemini,
+        WireFormat.NovelAi => CallerFormats.NovelAi,
         _ => string.Empty,
     };
 

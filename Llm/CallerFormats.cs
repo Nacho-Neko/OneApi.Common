@@ -10,6 +10,8 @@ public static class CallerFormats
 {
     public const string OpenAiChat = "openai.chat";
     public const string OpenAiResponses = "openai.responses";
+    public const string OpenAiImages = "openai.images";
     public const string Anthropic = "anthropic";
     public const string Gemini = "gemini";
+    public const string NovelAi = "novelai";
 }
