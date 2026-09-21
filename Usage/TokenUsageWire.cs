@@ -7,20 +7,28 @@ namespace OneApi.Common.Usage;
 /// </summary>
 public static class TokenUsageWire
 {
+    /// <summary>
+    /// <paramref name="completion"/> 必须是剥掉 reasoning 与各模态之后的正文量：
+    /// 各桶不相交是 <see cref="TokenUsage"/> 的前提，计价按桶累加。
+    /// </summary>
     public static TokenUsage FromBreakdown(
         int prompt,
         int completion,
         int reasoning = 0,
         int cachedRead = 0,
         int cachedWrite = 0,
-        int inputAudio = 0) =>
+        int inputAudio = 0,
+        int outputAudio = 0,
+        int outputImage = 0) =>
         new(
             InputTokens: Math.Max(0, prompt),
             OutputTokens: Math.Max(0, completion),
             ReasoningTokens: Math.Max(0, reasoning),
             CachedReadTokens: Math.Max(0, cachedRead),
             CachedWriteTokens: Math.Max(0, cachedWrite),
-            InputAudioTokens: Math.Max(0, inputAudio));
+            InputAudioTokens: Math.Max(0, inputAudio),
+            OutputAudioTokens: Math.Max(0, outputAudio),
+            OutputImageTokens: Math.Max(0, outputImage));
 
     public static (int PromptTokens, int CompletionTokens) ToPromptCompletion(TokenUsage usage) =>
         (usage.InputTokens, usage.OutputTokens);

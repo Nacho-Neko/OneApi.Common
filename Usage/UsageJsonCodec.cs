@@ -38,6 +38,7 @@ public static class UsageJsonCodec
                 Tokens = output,
                 ReasoningTokens = Math.Max(0, usage.ReasoningTokens),
                 AudioTokens = Math.Max(0, usage.OutputAudioTokens),
+                ImageTokens = Math.Max(0, usage.OutputImageTokens),
             },
         };
     }
@@ -68,7 +69,8 @@ public static class UsageJsonCodec
             doc.Input.CachedReadTokens,
             doc.Input.CachedWriteTokens,
             doc.Input.AudioTokens,
-            doc.Output.AudioTokens);
+            doc.Output.AudioTokens,
+            doc.Output.ImageTokens);
     }
 
     // ── 媒体形（image / audio / video）────────────────────────────────────

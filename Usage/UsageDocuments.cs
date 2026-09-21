@@ -34,6 +34,10 @@ public sealed class TokenUsageInput
     public int AudioTokens { get; set; }
 }
 
+/// <summary>
+/// 产出侧各桶互不重叠：<see cref="Tokens"/> 是剥掉思考与各模态之后的正文量，
+/// 单价不同的部分各占一桶（见 <see cref="TokenUsage"/>）。求总量要把几桶相加。
+/// </summary>
 public sealed class TokenUsageOutput
 {
     [JsonPropertyName("tokens")]
@@ -45,6 +49,10 @@ public sealed class TokenUsageOutput
 
     [JsonPropertyName("audioTokens")]
     public int AudioTokens { get; set; }
+
+    /// <summary>图像 output token（回图的聊天模型，如 gemini-2.5-flash-image）。</summary>
+    [JsonPropertyName("imageTokens")]
+    public int ImageTokens { get; set; }
 }
 
 /// <summary>image 形 usage json：{tier{size, quality}, count}。</summary>
