@@ -78,4 +78,11 @@ public sealed class DispatchCommand
     /// （Tavern、ToApi 还没带这个字段）。
     /// </summary>
     [Key(8)] public WireFormat EdgeFormat { get; set; }
+
+    /// <summary>
+    /// 令牌绑定的采样预设。网关在把请求收成渠道协议之后再套用，
+    /// 所以 <c>cache_control</c> 和提示词插入对着的是上游真正看到的那份 body。
+    /// 空表示这次没有要改请求的预设。旧调用方不带这个字段时为 null。
+    /// </summary>
+    [Key(9)] public SamplingRules? SamplingRules { get; set; }
 }
