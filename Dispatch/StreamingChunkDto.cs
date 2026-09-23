@@ -3,34 +3,66 @@ using MessagePack;
 namespace OneApi.Common.Dispatch;
 
 /// <summary>
-/// A single streaming response chunk, MessagePack-serialized for dispatch transport
-/// (e.g. opaque chunk payloads on Demux dispatch stream frames).
+/// Provider 到网关这一跳的内部帧。公开入口不读它：网关编成调用方协议的 SSE
+/// （<see cref="Meeko.Contracts.Demux.Dispatch.DispatchFrameType.Sse"/>）再交回去。
+/// 渠道若还留着上游原文，只填 <see cref="StreamingContentType.RawSse"/> 和 <see cref="Text"/>。
 /// </summary>
 [MessagePackObject]
 public partial class StreamingChunkDto
 {
-    [Key(0)] public string? AuthorRole { get; set; }
-    [Key(1)] public StreamingContentType ContentType { get; set; }
-    [Key(2)] public string? Text { get; set; }
-    [Key(3)] public string? FunctionName { get; set; }
-    [Key(4)] public string? FunctionCallId { get; set; }
-    [Key(5)] public string? FunctionArguments { get; set; }
-    [Key(6)] public bool Done { get; set; }
-    [Key(7)] public string? Error { get; set; }
-    [Key(8)] public Dictionary<string, long>? Usage { get; set; }
-    [Key(9)] public string? ModelId { get; set; }
-    [Key(10)] public string? FinishReason { get; set; }
-    [Key(11)] public string? ErrorCode { get; set; }
-    [Key(12)] public Dictionary<string, string>? ErrorParams { get; set; }
+    [Key(0)] public StreamingContentType ContentType { get; set; }
+
+    [Key(1)] public string? AuthorRole { get; set; }
+
+    [Key(2)] public string? ModelId { get; set; }
+
+    [Key(3)] public bool Done { get; set; }
+
+    /// <summary>正文、思考，或一行原始 SSE。哪种由 <see cref="ContentType"/> 决定。</summary>
+    [Key(4)] public string? Text { get; set; }
+
+    /// <summary>上游给思考块或工具调用附带的签名。</summary>
+    [Key(5)] public string? ReasoningSignature { get; set; }
 
     /// <summary>
-    /// Opaque cryptographic signature the upstream provider attached to this block
-    /// (Anthropic <c>thinking.signature</c>, Gemini <c>thoughtSignature</c>). Set on
-    /// <see cref="StreamingContentType.Thinking"/> chunks and — for Gemini 3, which
-    /// signs the <c>functionCall</c> part and validates it on replay — on
-    /// <see cref="StreamingContentType.FunctionCall"/> chunks as well.
+    /// 终止原因。Gemini 的思考块会把这里标成 <c>thought</c>，那是标签，不是终止。
     /// </summary>
-    [Key(13)] public string? ReasoningSignature { get; set; }
+    [Key(6)] public string? FinishReason { get; set; }
+
+    [Key(7)] public ToolCallChunk? ToolCall { get; set; }
+
+    [Key(8)] public Dictionary<string, long>? Usage { get; set; }
+
+    [Key(9)] public ChunkError? Error { get; set; }
+
+    public static StreamingChunkDto Failed(string message, string? code, Dictionary<string, string>? parms = null)
+        => new()
+        {
+            Done = true,
+            Error = new ChunkError { Message = message, Code = code, Params = parms },
+        };
+}
+
+/// <summary>一次工具调用。名字和 id 在开始时给出，参数 JSON 随后按片段追加。</summary>
+[MessagePackObject]
+public sealed class ToolCallChunk
+{
+    [Key(0)] public string? Name { get; set; }
+
+    [Key(1)] public string? Id { get; set; }
+
+    [Key(2)] public string? Arguments { get; set; }
+}
+
+/// <summary>这一帧失败时的错误。成功帧不带。</summary>
+[MessagePackObject]
+public sealed class ChunkError
+{
+    [Key(0)] public string? Message { get; set; }
+
+    [Key(1)] public string? Code { get; set; }
+
+    [Key(2)] public Dictionary<string, string>? Params { get; set; }
 }
 
 public enum StreamingContentType : byte

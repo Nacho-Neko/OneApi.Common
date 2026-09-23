@@ -13,6 +13,12 @@ public static class DispatchFrameType
 
     /// <summary>派发/上游错误；总是流的最后一帧。</summary>
     public const byte Error = 2;
+
+    /// <summary>生图正文的一块（<see cref="DispatchStreamFrame.ChunkPayload"/> 是 <c>ImageBodyChunk</c>）。</summary>
+    public const byte Body = 3;
+
+    /// <summary>调用方协议的一帧 SSE（<see cref="DispatchStreamFrame.ChunkPayload"/> 是 UTF-8 字节）。</summary>
+    public const byte Sse = 4;
 }
 
 /// <summary>
@@ -37,7 +43,11 @@ public sealed class DispatchStreamFrame
     [Key(5)] public string? ConversationSource { get; set; }
 
     // ── Chunk 帧 ────────────────────────────────────────────────────────────
-    /// <summary>MessagePack 序列化的 <c>StreamingChunkDto</c> 原始字节。</summary>
+    /// <summary>
+    /// <see cref="DispatchFrameType.Chunk"/> 时是 <c>StreamingChunkDto</c>，
+    /// <see cref="DispatchFrameType.Sse"/> 时是调用方协议的 SSE 字节，
+    /// <see cref="DispatchFrameType.Body"/> 时是 <c>ImageBodyChunk</c>。
+    /// </summary>
     [Key(6)] public byte[]? ChunkPayload { get; set; }
 
     // ── Error 帧 ────────────────────────────────────────────────────────────

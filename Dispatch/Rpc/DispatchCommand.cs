@@ -71,4 +71,11 @@ public sealed class DispatchCommand
     /// 追加到末位则双向兼容：旧接收方跳过多出来的元素，新接收方收到旧命令时此项为 null。</para>
     /// </summary>
     [Key(7)] public CallerAccount? CallerAccount { get; set; }
+
+    /// <summary>
+    /// 调用方真正的协议。网关把上游回包编成这个协议的 SSE 再交回入口。
+    /// <see cref="WireFormat.Unspecified"/> 时仍回 <c>StreamingChunkDto</c>
+    /// （Tavern、ToApi 还没带这个字段）。
+    /// </summary>
+    [Key(8)] public WireFormat EdgeFormat { get; set; }
 }
