@@ -22,11 +22,13 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
+    <PackageReference Include="Consul" />
     <PackageReference Include="MagicOnion.Abstractions" />
     <PackageReference Include="MessagePack" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' != 'true'">
+    <PackageReference Include="Consul" Version="1.8.0" />
     <PackageReference Include="MagicOnion.Abstractions" Version="7.10.0" />
     <PackageReference Include="MessagePack" Version="3.1.7" />
   </ItemGroup>
