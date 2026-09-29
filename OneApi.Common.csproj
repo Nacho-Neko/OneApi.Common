@@ -11,9 +11,13 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Description>OneApi cross-service shared primitives: LLM invoke routing, usage kinds/units/billing types, dispatch wire DTOs/error codes, Edge ↔ Gateway MagicOnion dispatch RPC (ILlmDispatchService), catalog slug parsing, local Claude token counting. Single source of truth across OneApi.Gateway, Meeko.Demux and Tavern.Gateway.</Description>
+    <Description>OneApi cross-service shared primitives: LLM invoke routing, usage kinds/units/billing types, dispatch wire DTOs/error codes, Edge ↔ Gateway MagicOnion dispatch RPC (ILlmDispatchService), the gwconsul channel used to call that RPC, catalog slug parsing, local Claude token counting. Single source of truth across OneApi.Gateway, Meeko.Demux and Tavern.Gateway.</Description>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Demux.Gateway.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Reverse-engineered Claude 3+/4.x vocabulary (ctoc, 38,360 API-verified tokens),
@@ -23,14 +27,22 @@
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
     <PackageReference Include="Consul" />
+    <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="MagicOnion.Abstractions" />
+    <PackageReference Include="MagicOnion.Client" />
     <PackageReference Include="MessagePack" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' != 'true'">
     <PackageReference Include="Consul" Version="1.8.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.80.0" />
     <PackageReference Include="MagicOnion.Abstractions" Version="7.10.0" />
+    <PackageReference Include="MagicOnion.Client" Version="7.10.0" />
     <PackageReference Include="MessagePack" Version="3.1.7" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
   </ItemGroup>
 
 </Project>
