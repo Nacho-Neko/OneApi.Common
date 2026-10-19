@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Demux.Gateway.Tests" />
+    <InternalsVisibleTo Include="Yomi.Gateway.Tests" />
   </ItemGroup>
 
   <ItemGroup>
