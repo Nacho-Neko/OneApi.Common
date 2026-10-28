@@ -35,6 +35,13 @@ public partial class StreamingChunkDto
 
     [Key(9)] public ChunkError? Error { get; set; }
 
+    /// <summary>
+    /// 上游积分（Kiro 的 credits 之类），随 <see cref="StreamingContentType.Usage"/> 帧带。
+    /// 不放进 <see cref="Usage"/>：那是 long 字典，积分常是小数（0.028），塞进去就被截成 0。
+    /// 是累计值，多帧时取最大。
+    /// </summary>
+    [Key(10)] public decimal? Credits { get; set; }
+
     public static StreamingChunkDto Failed(string message, string? code, Dictionary<string, string>? parms = null)
         => new()
         {

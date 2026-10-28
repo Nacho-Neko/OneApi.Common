@@ -169,9 +169,8 @@ public readonly record struct NovelAiAnlasEstimate(int PerSample, int Samples, b
     };
 
     /// <summary>
-    /// 随生图回包带回网关的用量字典（<see cref="CreditUsageKeys"/>）：号池账号实际被扣的积分。
+    /// 随生图回包带回网关的积分：号池账号实际被扣的数。
     /// 档位已知按档位算（Opus 免费档为 0）；档位未知时只能按标价报，宁可多报不少报。
     /// </summary>
-    public Dictionary<string, long> ToUsage(bool? isOpus)
-        => new(1) { [CreditUsageKeys.Credits] = Charged(isOpus) ?? Full };
+    public decimal ActualCredits(bool? isOpus) => Charged(isOpus) ?? Full;
 }
