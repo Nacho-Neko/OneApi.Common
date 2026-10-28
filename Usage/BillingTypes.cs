@@ -13,13 +13,19 @@ public static class BillingTypes
     public const string PerAudioMinute = "per_audio_minute";
     public const string PerCharacter = "per_character";
 
+    /// <summary>
+    /// 按 NovelAI Anlas 计价：rate_json 是 <c>{ pricePerAnlas }</c>，用量仍是生图口径
+    /// （<c>ImageUsage.Anlas</c>），张数照记只是不再定价。
+    /// </summary>
+    public const string PerAnlas = "per_anlas";
+
     /// <summary>归一 billing_type；非法抛 <see cref="ArgumentException"/>。</summary>
     public static string Normalize(string? raw)
     {
         var bt = (raw ?? PerToken).Trim().ToLowerInvariant();
         return bt switch
         {
-            PerToken or PerCall or PerImage or PerVideo or PerAudioMinute or PerCharacter => bt,
+            PerToken or PerCall or PerImage or PerVideo or PerAudioMinute or PerCharacter or PerAnlas => bt,
             _ => throw new ArgumentException($"unsupported billing_type '{raw}'.", nameof(raw)),
         };
     }
