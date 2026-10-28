@@ -24,7 +24,7 @@ public sealed class ImageBodyChunk
     [Key(5)] public Dictionary<string, string>? ErrorParams { get; set; }
 
     /// <summary>
-    /// 这次生成的用量（键见 <see cref="Usage.ImageBodyUsageKeys"/>）。
+    /// 这次生成的用量（键见 <see cref="Usage.CreditUsageKeys"/>）。
     /// 上游不回扣费数据，Provider 在发车前就按参数算好了，所以附在<b>第一块正文</b>上，
     /// 而不是结束帧——结束帧在网关里被吞掉，接收端收不到。接收端收到任一块带它就记下，
     /// 后到的覆盖先到的；没带就是旧 Provider，接收端按自己的估算走。

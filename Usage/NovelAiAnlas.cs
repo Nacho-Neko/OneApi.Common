@@ -169,14 +169,14 @@ public readonly record struct NovelAiAnlasEstimate(int PerSample, int Samples, b
     };
 
     /// <summary>
-    /// 随生图回包带回网关的用量字典（<see cref="ImageBodyUsageKeys"/>）。
+    /// 随生图回包带回网关的用量字典（<see cref="CreditUsageKeys"/>）。
     /// 标价总是带；号池账号的实扣只在档位已知时带。
     /// </summary>
     public Dictionary<string, long> ToUsage(bool? isOpus)
     {
-        var usage = new Dictionary<string, long>(2) { [ImageBodyUsageKeys.Credits] = Full };
+        var usage = new Dictionary<string, long>(2) { [CreditUsageKeys.Credits] = Full };
         if (Charged(isOpus) is { } charged)
-            usage[ImageBodyUsageKeys.CreditsCharged] = charged;
+            usage[CreditUsageKeys.CreditsCharged] = charged;
         return usage;
     }
 }

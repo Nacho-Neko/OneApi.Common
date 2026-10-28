@@ -1,11 +1,11 @@
 namespace OneApi.Common.Usage;
 
 /// <summary>
-/// 生图回包随 <see cref="Dispatch.ImageBodyChunk.Usage"/> 带回的用量键。
-/// 对话的 token 键在 <see cref="UsageStreamKeys"/>；生图上游不报 token，这里是另一套。
+/// 上游积分的用量键。生图随 <see cref="Dispatch.ImageBodyChunk.Usage"/> 带回，对话随 <see cref="Dispatch.StreamingChunkDto.Usage"/>（Kiro 的 <c>credits</c>）带回，同一套键。
+/// token 键在 <see cref="UsageStreamKeys"/>；积分不是 token，单列。
 /// 「积分」是上游厂商自己的计量单位（NovelAI 叫 Anlas），各家各算各的，网关只认这个数。
 /// </summary>
-public static class ImageBodyUsageKeys
+public static class CreditUsageKeys
 {
     /// <summary>
     /// 这次生成按上游标价要扣的积分（NovelAI 由 <see cref="NovelAiAnlas"/> 算）。
