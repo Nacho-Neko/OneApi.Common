@@ -174,9 +174,9 @@ public readonly record struct NovelAiAnlasEstimate(int PerSample, int Samples, b
     /// </summary>
     public Dictionary<string, long> ToUsage(bool? isOpus)
     {
-        var usage = new Dictionary<string, long>(2) { [ImageBodyUsageKeys.Anlas] = Full };
+        var usage = new Dictionary<string, long>(2) { [ImageBodyUsageKeys.Credits] = Full };
         if (Charged(isOpus) is { } charged)
-            usage[ImageBodyUsageKeys.AnlasCharged] = charged;
+            usage[ImageBodyUsageKeys.CreditsCharged] = charged;
         return usage;
     }
 }
