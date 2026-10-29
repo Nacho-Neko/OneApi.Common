@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 
 namespace OneApi.Common.Usage;
 
@@ -14,8 +13,8 @@ namespace OneApi.Common.Usage;
 /// 1024×1024、28 步算出 20，与官网公布的价格一致。v4 起的模型没有 SMEA，公式其余部分不变，
 /// 这里对 v3 以后的所有模型都用它。</para>
 ///
-/// <para>放在 OneApi.Common 而不是 Neko.Api：号池 Provider 用它算实扣并随回包带回，
-/// Yomi.Gateway 用它在派发前估冻结额。两边必须是同一个公式，否则冻结与实扣对不上。</para>
+/// <para>号池 Provider 用它算账号实扣，随回包带回网关按积分计费。网关不拿它估冻结额：
+/// 积分计费的预扣只看钱包够不够，不估积分。</para>
 ///
 /// <para>算不到的部分：v5 的用量上限用完后"每张都扣"的规则（服务端状态，本地无从得知）、
 /// Vibe Transfer 编码单独收的 Anlas、以及订阅过期。所以这是估算，不是账单。</para>
@@ -34,34 +33,24 @@ public static class NovelAiAnlas
     /// <summary>每张图的最低价。</summary>
     private const int MinPerSample = 2;
 
-    /// <summary>
-    /// <paramref name="body"/> 是完整请求体（<c>input</c> / <c>model</c> / <c>action</c> /
-    /// <c>parameters</c>）。缺 <c>parameters</c> 或缺宽高时返回 null，调用方整段不打这个字段。
-    /// </summary>
-    public static NovelAiAnlasEstimate? Estimate(JsonElement body)
+    /// <summary>缺 <c>parameters</c> 或缺宽高时返回 null，调用方整段不打这个字段。</summary>
+    public static NovelAiAnlasEstimate? Estimate(NovelAiImageRequest request)
     {
-        if (body.ValueKind != JsonValueKind.Object
-            || !body.TryGetProperty("parameters", out var p)
-            || p.ValueKind != JsonValueKind.Object)
+        if (request.Parameters is not { Width: > 0 and var width, Height: > 0 and var height } p)
             return null;
 
-        var width = ReadInt(p, "width");
-        var height = ReadInt(p, "height");
-        if (width is null or <= 0 || height is null or <= 0) return null;
-
-        var action = ReadString(body, "action") ?? ReadString(p, "action") ?? "generate";
-        var usesBaseImage = !action.Equals("generate", StringComparison.OrdinalIgnoreCase)
-                            || p.TryGetProperty("image", out var img) && img.ValueKind == JsonValueKind.String;
+        var action = request.Action ?? p.Action ?? "generate";
+        var usesBaseImage = !action.Equals("generate", StringComparison.OrdinalIgnoreCase) || p.Image is not null;
 
         return Compute(
-            width.Value, height.Value,
-            steps: ReadInt(p, "steps") ?? OpusFreeMaxSteps,
-            samples: ReadInt(p, "n_samples") ?? 1,
-            smea: ReadBool(p, "sm") ?? false,
-            smeaDyn: ReadBool(p, "sm_dyn") ?? false,
+            width, height,
+            steps: p.Steps ?? OpusFreeMaxSteps,
+            samples: p.Samples ?? 1,
+            smea: p.Smea ?? false,
+            smeaDyn: p.SmeaDyn ?? false,
             usesBaseImage: usesBaseImage,
-            strength: ReadDouble(p, "strength"),
-            uncondScale: ReadDouble(p, "uncond_scale"));
+            strength: p.Strength,
+            uncondScale: p.UncondScale);
     }
 
     /// <summary>
@@ -97,44 +86,6 @@ public static class NovelAiAnlas
 
         return new NovelAiAnlasEstimate(rounded, samples, opusFree);
     }
-
-    private static int? ReadInt(JsonElement obj, string name)
-    {
-        if (!obj.TryGetProperty(name, out var v)) return null;
-        return v.ValueKind switch
-        {
-            JsonValueKind.Number when v.TryGetInt32(out var n) => n,
-            JsonValueKind.Number when v.TryGetDouble(out var d) => (int)d,
-            JsonValueKind.String when int.TryParse(v.GetString(), out var s) => s,
-            _ => null,
-        };
-    }
-
-    private static double? ReadDouble(JsonElement obj, string name)
-    {
-        if (!obj.TryGetProperty(name, out var v)) return null;
-        return v.ValueKind switch
-        {
-            JsonValueKind.Number when v.TryGetDouble(out var d) => d,
-            JsonValueKind.String when double.TryParse(
-                v.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var s) => s,
-            _ => null,
-        };
-    }
-
-    private static bool? ReadBool(JsonElement obj, string name)
-    {
-        if (!obj.TryGetProperty(name, out var v)) return null;
-        return v.ValueKind switch
-        {
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            _ => null,
-        };
-    }
-
-    private static string? ReadString(JsonElement obj, string name)
-        => obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 }
 
 /// <summary>
