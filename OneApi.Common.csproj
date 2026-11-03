@@ -46,8 +46,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 注册基类 ConsulRegistration、业务树编码与平台 Meta 键名都在这里；检出时与本库同级。 -->
-    <ProjectReference Include="..\Platform.Common\Platform.Common.csproj" />
+    <!--
+      注册基类 ConsulRegistration、业务树编码与平台 Meta 键名都在这里；检出时 Platform.Common 与本库同级。
+      只引用拆出来的 Platform.Common.Discovery，不引用整个 Platform.Common：后者带 ASP.NET Core 框架引用，
+      会顺着本库传到 OneApi 的每个 provider，让它们在 dotnet/runtime 镜像里启动即退出。
+    -->
+    <ProjectReference Include="..\Platform.Common\Platform.Common.Discovery\Platform.Common.Discovery.csproj" />
   </ItemGroup>
 
 </Project>
