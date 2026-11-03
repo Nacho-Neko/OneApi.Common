@@ -22,7 +22,7 @@ namespace OneApi.Common.Dispatch;
 /// </summary>
 public static class OneApiGatewayChannel
 {
-    /// <summary>与 OneApi <c>GatewaySelfRegistrar.ServiceName</c> 一致。</summary>
+    /// <summary>OneApi.Gateway 在 Consul 里的服务名，注册（<see cref="Discovery.OneApiGatewayRegistration"/>）和解析共用这一个。</summary>
     public const string ServiceName = "Gateway";
 
     public const string Scheme = "gwconsul";

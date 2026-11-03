@@ -45,4 +45,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 注册基类 ConsulRegistration、业务树编码与平台 Meta 键名都在这里；检出时与本库同级。 -->
+    <ProjectReference Include="..\Platform.Common\Platform.Common.csproj" />
+  </ItemGroup>
+
 </Project>
