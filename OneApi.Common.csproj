@@ -37,12 +37,12 @@
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' != 'true'">
     <PackageReference Include="Consul" Version="1.8.0" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.80.0" />
-    <PackageReference Include="MagicOnion.Abstractions" Version="7.10.0" />
-    <PackageReference Include="MagicOnion.Client" Version="7.10.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.85.0" />
+    <PackageReference Include="MagicOnion.Abstractions" Version="7.11.0" />
+    <PackageReference Include="MagicOnion.Client" Version="7.11.0" />
     <PackageReference Include="MessagePack" Version="3.1.12" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>
