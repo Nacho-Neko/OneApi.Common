@@ -3,28 +3,23 @@ namespace OneApi.Common.Llm.Clients;
 /// <summary><see cref="LlmClientPool"/> 的容量与回收设置。</summary>
 public sealed record LlmClientPoolOptions
 {
-    /// <summary>默认常备数（<see cref="InitialCapacity"/> 不填时，不超过上限）。</summary>
-    public const int DefaultInitialCapacity = 10;
-
-    /// <summary>默认空闲回收时长。</summary>
-    public static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromMinutes(1);
+    /// <summary>
+    /// 最小数量：建池时先建好这么多，空闲回收也只回收到这里。各渠道一般只是上限不同，最小数量都一样；
+    /// 超过上限时按上限算。
+    /// </summary>
+    public int MinCapacity { get; init; } = 2;
 
     /// <summary>上限：最多同时有几个槽。<c>null</c> = 不设上限（忙时一直加）；<c>0</c> = 不用这个池。</summary>
     public int? MaxCapacity { get; init; }
-
-    /// <summary>
-    /// 初始容量：建池时先建好几个，空闲回收也只回收到这个数。不填 = <see cref="DefaultInitialCapacity"/>，不超过上限。
-    /// </summary>
-    public int? InitialCapacity { get; init; }
 
     /// <summary>每个槽执行完后的冷却，冷却完才能再占。</summary>
     public TimeSpan Cooldown { get; init; }
 
     /// <summary>
-    /// 空闲多久回收（只回收多于初始容量的部分）。<see cref="Timeout.InfiniteTimeSpan"/> = 不自动回收，
+    /// 空闲多久回收（只回收多于最小数量的部分）。<see cref="Timeout.InfiniteTimeSpan"/> = 不自动回收，
     /// 只在调 <see cref="LlmClientPool.TrimIdle"/> 时回收。
     /// </summary>
-    public TimeSpan IdleTimeout { get; init; } = DefaultIdleTimeout;
+    public TimeSpan IdleTimeout { get; init; } = TimeSpan.FromMinutes(1);
 
     /// <summary>计时（冷却、空闲时长、回收定时）。测试可以换。</summary>
     public TimeProvider Time { get; init; } = TimeProvider.System;
@@ -39,8 +34,8 @@ public sealed record LlmClientPoolOptions
 /// 一组 <see cref="LlmClient"/>，像缓冲池一样用：<see cref="TryReserve"/> 占一个空闲的，
 /// <see cref="ILlmClient.RunAsync"/> 执行完它自己回到空闲。
 ///
-/// <para>槽由池子经 <see cref="LlmClientContext"/> 创建：建池时先建初始容量个，都占着且没到上限就再建，
-/// 空闲超过 <see cref="LlmClientPoolOptions.IdleTimeout"/> 的回收到初始容量，省内存。
+/// <para>槽由池子经 <see cref="LlmClientContext"/> 创建：建池时先建最小数量个，都占着且没到上限就再建，
+/// 空闲超过 <see cref="LlmClientPoolOptions.IdleTimeout"/> 的回收到最小数量，省内存。
 /// 数组只在扩、缩时整份替换，扫描读不可变快照；占用、执行、归还改的是那个槽自己的状态，不改池子。</para>
 ///
 /// <para>「几个在执行」「还能占几个」都是现扫每个槽的状态算出来的，没有计数器。</para>
@@ -64,8 +59,8 @@ public sealed class LlmClientPool : IDisposable
         ArgumentNullException.ThrowIfNull(options);
         if (options.MaxCapacity < 0)
             throw new ArgumentOutOfRangeException(nameof(options), "MaxCapacity must not be negative.");
-        if (options.InitialCapacity < 0)
-            throw new ArgumentOutOfRangeException(nameof(options), "InitialCapacity must not be negative.");
+        if (options.MinCapacity < 0)
+            throw new ArgumentOutOfRangeException(nameof(options), "MinCapacity must not be negative.");
 
         _context = context;
         _onError = options.OnError;
@@ -73,16 +68,14 @@ public sealed class LlmClientPool : IDisposable
         Time = options.Time;
         Cooldown = options.Cooldown;
         MaxCapacity = options.MaxCapacity;
-        InitialCapacity = Math.Min(
-            options.InitialCapacity ?? LlmClientPoolOptions.DefaultInitialCapacity,
-            options.MaxCapacity ?? int.MaxValue);
+        MinCapacity = Math.Min(options.MinCapacity, options.MaxCapacity ?? int.MaxValue);
 
-        _clients = new LlmClient[InitialCapacity];
+        _clients = new LlmClient[MinCapacity];
         for (var i = 0; i < _clients.Length; i++)
             _clients[i] = Create();
 
-        // 上限等于初始容量的池子永远不会多出来，用不着回收。
-        if (_idleTimeout != Timeout.InfiniteTimeSpan && MaxCapacity != InitialCapacity)
+        // 上限等于最小数量的池子永远不会多出来，用不着回收。
+        if (_idleTimeout != Timeout.InfiniteTimeSpan && MaxCapacity != MinCapacity)
             _trimTimer = Time.CreateTimer(static state => ((LlmClientPool)state!).TrimInBackground(),
                 this, _idleTimeout, _idleTimeout);
     }
@@ -90,7 +83,8 @@ public sealed class LlmClientPool : IDisposable
     /// <summary>上限；<c>null</c> = 不设上限。</summary>
     public int? MaxCapacity { get; }
 
-    public int InitialCapacity { get; }
+    /// <summary>最小数量（已按上限截过）。</summary>
+    public int MinCapacity { get; }
 
     public TimeSpan Cooldown { get; }
 
@@ -164,7 +158,7 @@ public sealed class LlmClientPool : IDisposable
     }
 
     /// <summary>
-    /// 回收空闲超过 <see cref="LlmClientPoolOptions.IdleTimeout"/> 的槽，回收到初始容量为止，回收掉的立即释放。
+    /// 回收空闲超过 <see cref="LlmClientPoolOptions.IdleTimeout"/> 的槽，回收到最小数量为止，回收掉的立即释放。
     /// 返回回收了几个。平时由池子按回收时长自动做。
     /// </summary>
     public int TrimIdle()
@@ -180,7 +174,7 @@ public sealed class LlmClientPool : IDisposable
             foreach (var client in clients)
             {
                 // 先让它再也占不到，再从池子里拿掉：拿着旧快照的派发方也占不到一个正在回收的。
-                if (clients.Length - retired.Count > InitialCapacity
+                if (clients.Length - retired.Count > MinCapacity
                     && client.State == LlmClientState.Idle
                     && Time.GetElapsedTime(client.IdleSince) >= _idleTimeout
                     && client.TryRetire())
