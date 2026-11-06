@@ -13,12 +13,12 @@ public static class ModelSlug
 
     public static string ResolveBillingTier(string model)
     {
-        var slug = SplitBracketSyntax(model).BaseSlug;
+        string slug = SplitBracketSyntax(model).BaseSlug;
         if (string.IsNullOrWhiteSpace(slug))
             return string.Empty;
 
-        var isFast = slug.EndsWith(ModelVariantTokens.Fast, StringComparison.Ordinal);
-        var core = isFast
+        bool isFast = slug.EndsWith(ModelVariantTokens.Fast, StringComparison.Ordinal);
+        string core = isFast
             ? slug[..^ModelVariantTokens.Fast.Length]
             : slug;
 
@@ -32,7 +32,7 @@ public static class ModelSlug
 
     public static string StripToProductBase(string slug)
     {
-        var core = slug;
+        string core = slug;
         if (core.EndsWith(ModelVariantTokens.Fast, StringComparison.Ordinal))
             core = core[..^ModelVariantTokens.Fast.Length];
 
@@ -52,35 +52,28 @@ public static class ModelSlug
         return core;
     }
 
-    public static (string BaseSlug, string? BracketParams) SplitBracketSyntax(string model)
+    public static BracketSplit SplitBracketSyntax(string model)
     {
-        var s = (model ?? string.Empty).Trim();
-        var open = s.IndexOf('[', StringComparison.Ordinal);
+        string s = (model ?? string.Empty).Trim();
+        int open = s.IndexOf('[', StringComparison.Ordinal);
         if (open <= 0 || !s.EndsWith(']'))
-            return (s, null);
+            return new BracketSplit(s, null);
 
-        var baseSlug = s[..open].Trim();
-        var inner = s[(open + 1)..^1].Trim();
-        return (baseSlug, string.IsNullOrEmpty(inner) ? null : inner);
+        string baseSlug = s[..open].Trim();
+        string inner = s[(open + 1)..^1].Trim();
+        return new BracketSplit(baseSlug, string.IsNullOrEmpty(inner) ? null : inner);
     }
 
     public static ModelSlugParts Parse(string model)
     {
-        var raw = (model ?? string.Empty).Trim();
-        var (slug, bracketParams) = SplitBracketSyntax(raw);
-        var fast = slug.EndsWith(ModelVariantTokens.Fast, StringComparison.Ordinal);
-        var billingTier = ResolveBillingTier(raw);
-        var productBase = StripToProductBase(
+        string raw = (model ?? string.Empty).Trim();
+        BracketSplit split = SplitBracketSyntax(raw);
+        string slug = split.BaseSlug;
+        bool fast = slug.EndsWith(ModelVariantTokens.Fast, StringComparison.Ordinal);
+        string billingTier = ResolveBillingTier(raw);
+        string productBase = StripToProductBase(
             fast ? slug[..^ModelVariantTokens.Fast.Length] : slug);
 
-        return new ModelSlugParts(raw, slug, productBase, billingTier, fast, bracketParams);
+        return new ModelSlugParts(raw, slug, productBase, billingTier, fast, split.BracketParams);
     }
 }
-
-public record ModelSlugParts(
-    string Raw,
-    string SlugWithoutBrackets,
-    string ProductBase,
-    string BillingTier,
-    bool Fast,
-    string? BracketParams);
