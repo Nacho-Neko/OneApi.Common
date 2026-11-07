@@ -138,7 +138,7 @@ public sealed record DumpOnErrorDoc
 /// 截获点可达的错误码。
 ///
 /// <para><see cref="GatewayErrorCode"/> 的常量里只有这三组能在截获点出现：
-/// 计费/鉴权那组发生在 Demux edge（请求根本没进过 LlmDispatchService），
+/// 计费/鉴权那组发生在产品 edge（Yomi.Gateway 等；请求根本没进过 OneApi 的 LlmDispatchService），
 /// 参数校验那组属于早已不存在的 controller 层。把不可达的塞进控制台下拉框是陷阱。</para>
 /// </summary>
 public static class DumpErrorCodes

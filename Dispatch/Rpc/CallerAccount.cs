@@ -3,7 +3,7 @@ using MessagePack;
 namespace Meeko.Contracts.Demux.Dispatch;
 
 /// <summary>
-/// 调用方身份。由 edge（Demux / Tavern / ToApi）在鉴权完成后填入
+/// 调用方身份。由产品 edge（Yomi / Tavern / ToApi）在鉴权完成后填入
 /// <see cref="DispatchCommand.CallerAccount"/>，网关只读不改。
 ///
 /// <para><b>为什么是对象而不是几个平铺字段。</b> 这四项是一个整体：要么整条链路都不知道

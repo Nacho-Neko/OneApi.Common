@@ -13,7 +13,7 @@ namespace OneApi.Common.Tokenization;
 ///     CLAUDE tokens — an o200k count of the same text lands 5–40% lower, so a capped
 ///     round can measure "under 6000" in o200k units and silently evade cap-based
 ///     truncation detection;</item>
-///   <item>the Demux edge billing a stream the client aborted before the terminal
+///   <item>the Yomi edge billing a stream the client aborted before the terminal
 ///     <c>usage</c> frame arrived, where the only evidence left is the text already
 ///     delivered.</item>
 /// </list>

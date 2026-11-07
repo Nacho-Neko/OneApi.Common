@@ -4,7 +4,7 @@ using OneApi.Common.Llm;
 namespace Meeko.Contracts.Demux.Dispatch;
 
 /// <summary>
-/// LLM 派发命令。调用方（受信内网服务，如 DemuxAi.Edge）已完成鉴权、计费预扣与
+/// LLM 派发命令。调用方（受信内网服务，如 Yomi.Gateway）已完成鉴权、计费预扣与
 /// 模型别名解析：别名 → <see cref="VendorKey"/> + <see cref="VendorModel"/>。
 /// </summary>
 [MessagePackObject]
@@ -42,7 +42,7 @@ public sealed class DispatchCommand
     [Key(5)] public string? RequestId { get; set; }
 
     /// <summary>
-    /// prompt-cache 亲和键的隔离域：调用方身份（Demux 传
+    /// prompt-cache 亲和键的隔离域：调用方身份（Yomi 传
     /// <c>AccessTokenResolution.TokenId</c>）。只参与亲和键派生，<b>不进</b>
     /// <c>TaskEnvelope</c>、也永不出现在上游会话字段里。
     ///

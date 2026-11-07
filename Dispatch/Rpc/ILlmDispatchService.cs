@@ -6,7 +6,7 @@ namespace Meeko.Contracts.Demux.Dispatch;
 /// Edge → Gateway 高保真 LLM 派发服务（MagicOnion server streaming / unary）。
 ///
 /// <para>与面向 PG 路径的 <c>IInternalLlmInvokeService</c>（有损、结构化 chunk）不同，本契约为
-/// 公开 API 边缘服务（DemuxAi.Edge）设计：流式帧透传网关内部的
+/// 产品边缘设计（Yomi.Gateway，同类还有 Tavern / ToApi）：流式帧透传 OneApi 网关内部的
 /// <c>StreamingChunkDto</c>（MessagePack 序列化字节，见 <see cref="DispatchStreamFrame.ChunkPayload"/>），
 /// Edge 侧反序列化后可字节级重建三家原生 SSE 协议（含 RawSse 直通、reasoning 签名等），
 /// 不丢失任何上游信息。</para>
