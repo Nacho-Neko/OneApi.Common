@@ -111,7 +111,7 @@ public sealed record DumpPolicyDoc
     /// 报错抓包：出错时只抓请求。不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——
     /// 请求字节本来就活到调用结束，不必武装流式缓冲。
     /// 只抓我们自己这边的失败（网关或 Provider 转不了、读不懂、抛了异常）；Vendor 报的错、号池状态、调用方断开都不抓，
-    /// 要看 Vendor 报错就开时间窗按错误码抓。字段缺失时默认开，显式 <c>{"enabled":false}</c> 关掉。
+    /// 要看 Vendor 报错就开时间窗按错误码抓。默认关：字段缺失或没写 <c>"enabled": true</c> 都不抓。
     /// </summary>
     [JsonPropertyName("onError")] public DumpOnErrorDoc? OnError { get; init; }
 
@@ -124,7 +124,8 @@ public sealed record DumpPolicyDoc
 /// </summary>
 public sealed record DumpOnErrorDoc
 {
-    [JsonPropertyName("enabled")] public bool Enabled { get; init; } = true;
+    /// <summary>默认 false：抓包会把请求原文写进遥测，只在人明确打开时才抓。</summary>
+    [JsonPropertyName("enabled")] public bool Enabled { get; init; }
 
     [JsonPropertyName("statusCodes")] public int[] StatusCodes { get; init; } = [];
 
