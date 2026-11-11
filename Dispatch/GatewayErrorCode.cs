@@ -27,6 +27,15 @@ public static class GatewayErrorCode
     public const string NoResponseBody = "no_response_body";
     public const string InternalError = "internal_error";
 
+    // ── 网关的转码器（ChatTransit 等）──────────────────────────────────────
+    // 和 internal_error 分开：一看错误码就知道是转码器的问题，不是网关别处。
+
+    /// <summary>转码器没能把调用方的请求转成 Vendor 的协议。</summary>
+    public const string RequestTranscodeFailed = "request_transcode_failed";
+
+    /// <summary>转码器没能把 Vendor 的回包转成调用方的协议。</summary>
+    public const string ResponseTranscodeFailed = "response_transcode_failed";
+
     // ── Provider business errors ─────────────────────────────────────────────
     public const string CircuitBroken = "circuit_broken";
     public const string ModelNotFound = "model_not_found";

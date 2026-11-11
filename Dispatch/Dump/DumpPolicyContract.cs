@@ -108,31 +108,17 @@ public sealed record DumpPolicyDoc
     [JsonPropertyName("rules")] public DumpRuleDoc[] Rules { get; init; } = [];
 
     /// <summary>
-    /// 报错抓包：出错时只抓请求。不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——
-    /// 请求字节本来就活到调用结束，不必武装流式缓冲。
-    /// 只抓我们自己这边的失败（网关或 Provider 转不了、读不懂、抛了异常）；Vendor 报的错、号池状态、调用方断开都不抓，
-    /// 要看 Vendor 报错就开时间窗按错误码抓。默认关：字段缺失或没写 <c>"enabled": true</c> 都不抓。
+    /// 报错抓包：每个错误码一个开关，出错时只抓请求，例如
+    /// <c>{"request_transcode_failed": true, "worker_error": false}</c>。
+    /// 不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——请求字节本来就活到调用结束，不必武装流式缓冲。
+    ///
+    /// <para>只有 <see cref="DumpErrorCodes.OnErrorCodes"/> 里的码（我们自己这边的失败）有开关；
+    /// Vendor 报的错、号池状态、调用方断开都没有，写了也不认，要看 Vendor 报错就开时间窗按错误码抓。
+    /// 没写的码就是关：抓包会把请求原文写进遥测，只在人明确打开时才抓。</para>
     /// </summary>
-    [JsonPropertyName("onError")] public DumpOnErrorDoc? OnError { get; init; }
+    [JsonPropertyName("onError")] public Dictionary<string, bool>? OnError { get; init; }
 
     [JsonPropertyName("updatedAt")] public DateTimeOffset? UpdatedAt { get; init; }
-}
-
-/// <summary>
-/// 报错抓包的开关和筛选。三维只在「我们自己这边的失败」里再筛，维度之间为「或」；
-/// 三维都空就是这些失败全抓（控制台只写空数组）。Vendor 报的错怎么配都不会进来。
-/// </summary>
-public sealed record DumpOnErrorDoc
-{
-    /// <summary>默认 false：抓包会把请求原文写进遥测，只在人明确打开时才抓。</summary>
-    [JsonPropertyName("enabled")] public bool Enabled { get; init; }
-
-    [JsonPropertyName("statusCodes")] public int[] StatusCodes { get; init; } = [];
-
-    [JsonPropertyName("errorCodes")] public string[] ErrorCodes { get; init; } = [];
-
-    /// <summary>对响应原文做子串匹配，不解析协议。</summary>
-    [JsonPropertyName("messages")] public string[] Messages { get; init; } = [];
 }
 
 /// <summary>
@@ -156,6 +142,9 @@ public static class DumpErrorCodes
         GatewayErrorCode.GatewayTimeout,
         GatewayErrorCode.NoResponseBody,
         GatewayErrorCode.InternalError,
+        // 网关的转码器
+        GatewayErrorCode.RequestTranscodeFailed,
+        GatewayErrorCode.ResponseTranscodeFailed,
         // Provider 业务：来自 TaskReplyError.Code
         GatewayErrorCode.RateLimited,
         GatewayErrorCode.UpstreamError,
@@ -171,4 +160,25 @@ public static class DumpErrorCodes
     ];
 
     public static bool IsReachable(string code) => Reachable.Contains(code, StringComparer.Ordinal);
+
+    /// <summary>
+    /// 报错抓包能单独开关的错误码：都是我们自己这边的失败，要看调用方的原文才查得清。
+    /// 网关只认这些键，控制台也只给这些画开关。Vendor 报的错不在这里。
+    /// </summary>
+    public static IReadOnlyList<string> OnErrorCodes { get; } =
+    [
+        // 网关的转码器转不了调用方的请求 / Vendor 的回包
+        GatewayErrorCode.RequestTranscodeFailed,
+        GatewayErrorCode.ResponseTranscodeFailed,
+        // 网关自己抛了异常；派发器出错
+        GatewayErrorCode.InternalError,
+        // 派发器没收到回包正文
+        GatewayErrorCode.NoResponseBody,
+        // Provider 处理时抛了异常
+        GatewayErrorCode.WorkerError,
+        // Provider 读不懂网关发过去的请求
+        GatewayErrorCode.InvalidRequestBody,
+    ];
+
+    public static bool HasOnErrorSwitch(string code) => OnErrorCodes.Contains(code, StringComparer.Ordinal);
 }
