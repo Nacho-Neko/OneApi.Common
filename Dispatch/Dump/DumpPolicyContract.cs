@@ -108,10 +108,10 @@ public sealed record DumpPolicyDoc
     [JsonPropertyName("rules")] public DumpRuleDoc[] Rules { get; init; } = [];
 
     /// <summary>
-    /// 错误触发的请求抓获。不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——
+    /// 报错抓包：出错时只抓请求。不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——
     /// 请求字节本来就活到调用结束，不必武装流式缓冲。
-    /// 字段缺失时网关用内置默认（开；400/403/422、<c>upstream_error</c>、<c>Forbidden</c>）。
-    /// 显式 <c>{"enabled":false}</c> 关掉。
+    /// 只抓我们自己这边的失败（网关或 Provider 转不了、读不懂、抛了异常）；Vendor 报的错、号池状态、调用方断开都不抓，
+    /// 要看 Vendor 报错就开时间窗按错误码抓。字段缺失时默认开，显式 <c>{"enabled":false}</c> 关掉。
     /// </summary>
     [JsonPropertyName("onError")] public DumpOnErrorDoc? OnError { get; init; }
 
@@ -119,8 +119,8 @@ public sealed record DumpPolicyDoc
 }
 
 /// <summary>
-/// 按错误内容决定要不要把这次请求的荷载写入遥测。维度之间为「或」；
-/// 某一维空数组表示「用网关内置默认」，三维都空则三维都用默认。
+/// 报错抓包的开关和筛选。三维只在「我们自己这边的失败」里再筛，维度之间为「或」；
+/// 三维都空就是这些失败全抓（控制台只写空数组）。Vendor 报的错怎么配都不会进来。
 /// </summary>
 public sealed record DumpOnErrorDoc
 {
