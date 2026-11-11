@@ -14,7 +14,7 @@ public enum DumpRuleKind
     /// <summary>vendor_key。注意不是 NATS 派发组，填派发组永不命中。</summary>
     VendorKey,
 
-    /// <summary>上游裸模型名。</summary>
+    /// <summary>Vendor 的裸模型名。</summary>
     VendorModel,
 
     /// <summary>事后规则：按 GatewayErrorCode 匹配，可逗号分隔多选。</summary>
@@ -108,17 +108,92 @@ public sealed record DumpPolicyDoc
     [JsonPropertyName("rules")] public DumpRuleDoc[] Rules { get; init; } = [];
 
     /// <summary>
-    /// 报错抓包：每个错误码一个开关，出错时只抓请求，例如
-    /// <c>{"request_transcode_failed": true, "worker_error": false}</c>。
-    /// 不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——请求字节本来就活到调用结束，不必武装流式缓冲。
+    /// 报错抓包的策略：一组错误码模式，网关拿每次失败的错误码去匹配，匹配上就抓这次的请求。例如
+    /// <c>["ChatTransit.*", "!ChatTransit.Request.Malformed", "worker_error"]</c>。
+    /// 写法见 <see cref="DumpErrorPatterns"/>。不走 <see cref="Enabled"/>/<see cref="Until"/> 窗口——
+    /// 请求字节本来就活到调用结束，不必武装流式缓冲。
     ///
-    /// <para>只有 <see cref="DumpErrorCodes.OnErrorCodes"/> 里的码（我们自己这边的失败）有开关；
-    /// Vendor 报的错、号池状态、调用方断开都没有，写了也不认，要看 Vendor 报错就开时间窗按错误码抓。
-    /// 没写的码就是关：抓包会把请求原文写进遥测，只在人明确打开时才抓。</para>
+    /// <para>下发的是策略，不是错误清单：错误码分层命名（<c>ChatTransit.Request.NotConvertible</c>），
+    /// 一条 <c>ChatTransit.*</c> 就管住整个转码器，以后新加的错误不用改配置。</para>
+    ///
+    /// <para>没写或空数组就是不抓：抓包会把请求原文写进遥测，只在人明确打开时才抓。
+    /// 策略只在我们自己这边的失败里匹配；Vendor 报的错、号池状态、调用方断开，怎么写都匹配不上，
+    /// 要看 Vendor 报错就开时间窗按错误码抓。</para>
     /// </summary>
-    [JsonPropertyName("onError")] public Dictionary<string, bool>? OnError { get; init; }
+    [JsonPropertyName("onError")] public string[]? OnError { get; init; }
 
     [JsonPropertyName("updatedAt")] public DateTimeOffset? UpdatedAt { get; init; }
+}
+
+/// <summary>
+/// 错误码模式的写法和匹配，网关（匹配）和控制台（校验）用同一份。
+/// <list type="bullet">
+///   <item><c>*</c> 匹配任意一段字符：<c>ChatTransit.*</c>、<c>ChatTransit.Request.*</c>、<c>*</c>。</item>
+///   <item>不带 <c>*</c> 就是整个错误码完全相同：<c>worker_error</c>。区分大小写。</item>
+///   <item>以 <c>!</c> 开头是排除：前面的模式匹配上了、又被排除的，不算匹配。和书写顺序无关。</item>
+/// </list>
+/// </summary>
+public static class DumpErrorPatterns
+{
+    /// <summary>排除模式的前缀。</summary>
+    public const char Exclude = '!';
+
+    /// <summary>模式里允许的字符：错误码用到的字母、数字、<c>_</c>、<c>.</c>、<c>-</c>，加上 <c>*</c>。</summary>
+    public static bool IsValid(string? pattern)
+    {
+        if (string.IsNullOrEmpty(pattern)) return false;
+        var body = pattern[0] == Exclude ? pattern.AsSpan(1) : pattern.AsSpan();
+        if (body.IsEmpty) return false;
+        foreach (var c in body)
+        {
+            if (!(char.IsAsciiLetterOrDigit(c) || c is '_' or '.' or '-' or '*'))
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>一条模式（不带 <c>!</c>）是否匹配这个错误码。</summary>
+    public static bool Matches(ReadOnlySpan<char> pattern, ReadOnlySpan<char> code)
+    {
+        var star = pattern.IndexOf('*');
+        if (star < 0) return pattern.SequenceEqual(code);
+
+        // 第一段必须在开头，最后一段必须在结尾，中间各段按顺序出现。
+        var head = pattern[..star];
+        if (!code.StartsWith(head, StringComparison.Ordinal)) return false;
+        code = code[head.Length..];
+        pattern = pattern[(star + 1)..];
+
+        while ((star = pattern.IndexOf('*')) >= 0)
+        {
+            var part = pattern[..star];
+            var at = code.IndexOf(part, StringComparison.Ordinal);
+            if (at < 0) return false;
+            code = code[(at + part.Length)..];
+            pattern = pattern[(star + 1)..];
+        }
+
+        return code.EndsWith(pattern, StringComparison.Ordinal);
+    }
+
+    /// <summary>一组模式（含排除）是否匹配这个错误码：至少一条匹配，且没有被任何一条排除。</summary>
+    public static bool Matches(IReadOnlyList<string> patterns, string code)
+    {
+        var included = false;
+        foreach (var pattern in patterns)
+        {
+            if (pattern.Length == 0) continue;
+            if (pattern[0] == Exclude)
+            {
+                if (Matches(pattern.AsSpan(1), code)) return false;
+            }
+            else if (!included && Matches(pattern, code))
+            {
+                included = true;
+            }
+        }
+        return included;
+    }
 }
 
 /// <summary>
@@ -133,6 +208,15 @@ public static class DumpErrorCodes
     /// <summary>「任意失败」哨兵，不是 GatewayErrorCode 的成员。</summary>
     public const string AnyErrorSentinel = "any_error";
 
+    /// <summary>
+    /// 转码器错误码的前缀。具体的码由 ChatTransit 自己定义（<c>TransitErrorCode</c>：
+    /// <c>ChatTransit.Request.NotConvertible</c> 等），这个库不引用 ChatTransit，只认前缀。
+    /// </summary>
+    public const string TranscoderPrefix = "ChatTransit.";
+
+    /// <summary>整个转码器的错误，给时间窗的错误码规则用。</summary>
+    public const string AnyTranscoderError = TranscoderPrefix + "*";
+
     public static IReadOnlyList<string> Reachable { get; } =
     [
         AnyErrorSentinel,
@@ -143,8 +227,7 @@ public static class DumpErrorCodes
         GatewayErrorCode.NoResponseBody,
         GatewayErrorCode.InternalError,
         // 网关的转码器
-        GatewayErrorCode.RequestTranscodeFailed,
-        GatewayErrorCode.ResponseTranscodeFailed,
+        AnyTranscoderError,
         // Provider 业务：来自 TaskReplyError.Code
         GatewayErrorCode.RateLimited,
         GatewayErrorCode.UpstreamError,
@@ -159,26 +242,23 @@ public static class DumpErrorCodes
         GatewayErrorCode.StreamFailed,
     ];
 
-    public static bool IsReachable(string code) => Reachable.Contains(code, StringComparer.Ordinal);
+    /// <summary>名单里的码，或者任何一个转码器的码（含带 <c>*</c> 的写法）。</summary>
+    public static bool IsReachable(string code)
+        => Reachable.Contains(code, StringComparer.Ordinal)
+           || (code.StartsWith(TranscoderPrefix, StringComparison.Ordinal) && DumpErrorPatterns.IsValid(code));
 
     /// <summary>
-    /// 报错抓包能单独开关的错误码：都是我们自己这边的失败，要看调用方的原文才查得清。
-    /// 网关只认这些键，控制台也只给这些画开关。Vendor 报的错不在这里。
+    /// 这个错误码是不是我们自己这边的失败——报错抓包的策略只在这些里匹配：
+    /// 转码器的（<see cref="TranscoderPrefix"/> 开头）、网关自己抛了异常或派发器出错（<c>internal_error</c>）、
+    /// 派发器没收到回包正文（<c>no_response_body</c>）、Provider 处理时抛了异常（<c>worker_error</c>）、
+    /// Provider 读不懂网关发过去的请求（<c>invalid_request_body</c>）。
+    /// Vendor 报的错、号池状态都不是。
     /// </summary>
-    public static IReadOnlyList<string> OnErrorCodes { get; } =
-    [
-        // 网关的转码器转不了调用方的请求 / Vendor 的回包
-        GatewayErrorCode.RequestTranscodeFailed,
-        GatewayErrorCode.ResponseTranscodeFailed,
-        // 网关自己抛了异常；派发器出错
-        GatewayErrorCode.InternalError,
-        // 派发器没收到回包正文
-        GatewayErrorCode.NoResponseBody,
-        // Provider 处理时抛了异常
-        GatewayErrorCode.WorkerError,
-        // Provider 读不懂网关发过去的请求
-        GatewayErrorCode.InvalidRequestBody,
-    ];
-
-    public static bool HasOnErrorSwitch(string code) => OnErrorCodes.Contains(code, StringComparer.Ordinal);
+    public static bool IsOwnFailure(string? code)
+        => code is not null
+           && (code.StartsWith(TranscoderPrefix, StringComparison.Ordinal)
+               || code is GatewayErrorCode.InternalError
+                   or GatewayErrorCode.NoResponseBody
+                   or GatewayErrorCode.WorkerError
+                   or GatewayErrorCode.InvalidRequestBody);
 }
