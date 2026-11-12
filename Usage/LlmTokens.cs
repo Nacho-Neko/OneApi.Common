@@ -3,7 +3,8 @@ using MessagePack;
 namespace OneApi.Common.Usage;
 
 /// <summary>
-/// LLM 输入：未命中缓存的、命中缓存读取的、写入缓存的，三者互不包含。
+/// LLM 输入：未命中缓存的、命中缓存读取的、写入缓存的，三者互不包含
+/// （<see cref="CachedWrite1h"/> 是缓存写的拆分，不是第四项）。
 /// <para>
 /// 只有净值：上游各协议的口径（输入含不含缓存）由 <c>NativeUsageReader</c> 在读的时候换算掉，
 /// 照抄一份毛值进来，就是同一批 token 按两种单价收两遍。
@@ -19,15 +20,26 @@ public sealed record LlmInput : IMergeableUsage<LlmInput>
     /// <summary>命中缓存读取的输入。</summary>
     [Key(1)] public long CachedRead { get; init; }
 
-    /// <summary>写入（创建）缓存的输入。</summary>
+    /// <summary>写入（创建）缓存的输入，不分 TTL 的总量。</summary>
     [Key(2)] public long CachedWrite { get; init; }
+
+    /// <summary>
+    /// <see cref="CachedWrite"/> 里按 1 小时 TTL 写入的那部分，其余是 5 分钟档。两档单价不同
+    /// （Anthropic：输入价 × 2 与 × 1.25），所以要单独带出来。
+    /// <para>
+    /// 是 <see cref="CachedWrite"/> 的拆分，不是第四个桶：做成并列的桶，没升级的接收方会把这部分整个漏掉；
+    /// 做成子集，它照旧按总量收，只是收不到 1 小时档的差价。求输入总量时不要再加它。
+    /// </para>
+    /// </summary>
+    [Key(3)] public long CachedWrite1h { get; init; }
 
     /// <summary>上游 usage 是累计口径，分次报的同一项取最大。</summary>
     public LlmInput Merge(LlmInput later) => new()
     {
-        Prompt      = Math.Max(Prompt, later.Prompt),
-        CachedRead  = Math.Max(CachedRead, later.CachedRead),
-        CachedWrite = Math.Max(CachedWrite, later.CachedWrite),
+        Prompt        = Math.Max(Prompt, later.Prompt),
+        CachedRead    = Math.Max(CachedRead, later.CachedRead),
+        CachedWrite   = Math.Max(CachedWrite, later.CachedWrite),
+        CachedWrite1h = Math.Max(CachedWrite1h, later.CachedWrite1h),
     };
 }
 

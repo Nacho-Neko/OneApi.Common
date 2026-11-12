@@ -31,6 +31,7 @@ public static class UsageJsonCodec
                 Tokens = input,
                 CachedReadTokens = Math.Max(0, usage.CachedReadTokens),
                 CachedWriteTokens = Math.Max(0, usage.CachedWriteTokens),
+                CachedWrite1hTokens = Math.Max(0, usage.CachedWrite1hTokens),
                 AudioTokens = Math.Max(0, usage.InputAudioTokens),
             },
             Output = new TokenUsageOutput
@@ -70,7 +71,8 @@ public static class UsageJsonCodec
             doc.Input.CachedWriteTokens,
             doc.Input.AudioTokens,
             doc.Output.AudioTokens,
-            doc.Output.ImageTokens);
+            doc.Output.ImageTokens,
+            doc.Input.CachedWrite1hTokens);
     }
 
     // ── 媒体形（image / audio / video）────────────────────────────────────

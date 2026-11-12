@@ -19,7 +19,8 @@ public static class TokenUsageWire
         int cachedWrite = 0,
         int inputAudio = 0,
         int outputAudio = 0,
-        int outputImage = 0) =>
+        int outputImage = 0,
+        int cachedWrite1h = 0) =>
         new(
             InputTokens: Math.Max(0, prompt),
             OutputTokens: Math.Max(0, completion),
@@ -28,7 +29,9 @@ public static class TokenUsageWire
             CachedWriteTokens: Math.Max(0, cachedWrite),
             InputAudioTokens: Math.Max(0, inputAudio),
             OutputAudioTokens: Math.Max(0, outputAudio),
-            OutputImageTokens: Math.Max(0, outputImage));
+            OutputImageTokens: Math.Max(0, outputImage),
+            // 子集不能比总量大：上游的数自相矛盾时按总量封顶，多出来的那截不存在。
+            CachedWrite1hTokens: Math.Clamp(cachedWrite1h, 0, Math.Max(0, cachedWrite)));
 
     public static (int PromptTokens, int CompletionTokens) ToPromptCompletion(TokenUsage usage) =>
         (usage.InputTokens, usage.OutputTokens);

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace OneApi.Common.Usage.Native;
 
@@ -27,9 +28,21 @@ public sealed class AnthropicUsageReader() : NativeUsageReader<AnthropicFrame>(J
         // 缓存读和缓存写是两份不同的输入，不是同一个数的两个名字：读 25944 同时写 7233 就是花了 33177，
         // 两者取最大会只收大的那份、把另一份悄悄丢掉。
         var cachedRead = usage.CacheReadInputTokens ?? 0;
-        var cachedWrite = usage.CacheCreationInputTokens ?? 0;
+
+        // 缓存写按 TTL 拆在 cache_creation 里，cache_creation_input_tokens 是两档之和
+        // （官方 prompt-caching「1-hour cache duration」）。总数缺了才拿拆分求和顶上；
+        // 1 小时档是总数的子集，单独带出去是因为它的单价是另一个数。
+        var written1h = usage.CacheCreation?.Ephemeral1hInputTokens ?? 0;
+        var cachedWrite = usage.CacheCreationInputTokens
+                          ?? written1h + (usage.CacheCreation?.Ephemeral5mInputTokens ?? 0);
         if (usage.InputTokens is not null || cachedRead > 0 || cachedWrite > 0)
-            reading.Input.Merge(new LlmInput { Prompt = usage.InputTokens ?? 0, CachedRead = cachedRead, CachedWrite = cachedWrite });
+            reading.Input.Merge(new LlmInput
+            {
+                Prompt = usage.InputTokens ?? 0,
+                CachedRead = cachedRead,
+                CachedWrite = cachedWrite,
+                CachedWrite1h = written1h,
+            });
 
         // Anthropic 的 usage 是累计口径，message_start 报的是「发这一帧时已经产出多少」——
         // 一个偏小、但不固定的部分量，终值只在 message_delta 的根级 usage 上。
@@ -82,12 +95,30 @@ public sealed record AnthropicUsage
     public long? InputTokens { get; init; }
 
     public long? CacheReadInputTokens { get; init; }
+
+    /// <summary>缓存写总量，等于 <see cref="CacheCreation"/> 里两档之和。</summary>
     public long? CacheCreationInputTokens { get; init; }
+
+    /// <summary>缓存写按 TTL 的拆分；只在 <c>message_start</c> 和非流式回包上。</summary>
+    public AnthropicCacheCreation? CacheCreation { get; init; }
 
     /// <summary>毛产出，含 <see cref="AnthropicOutputDetails.ThinkingTokens"/>。</summary>
     public long? OutputTokens { get; init; }
 
     public AnthropicOutputDetails? OutputTokensDetails { get; init; }
+}
+
+/// <summary>
+/// <c>usage.cache_creation</c>。键名写死：snake_case 命名策略把数字并进前一个词，
+/// <c>Ephemeral1hInputTokens</c> 会映射成 <c>ephemeral1h_input_tokens</c>，对不上线上的键。
+/// </summary>
+public sealed record AnthropicCacheCreation
+{
+    [JsonPropertyName("ephemeral_5m_input_tokens")]
+    public long? Ephemeral5mInputTokens { get; init; }
+
+    [JsonPropertyName("ephemeral_1h_input_tokens")]
+    public long? Ephemeral1hInputTokens { get; init; }
 }
 
 public sealed record AnthropicOutputDetails

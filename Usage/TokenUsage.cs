@@ -11,6 +11,10 @@ namespace OneApi.Common.Usage;
 /// 已从总产出里剥出来，因为各模态单价不同（Gemini 图像 token、gpt-4o 音频 token 都比正文贵一个量级），
 /// 计价是按桶累加的。重叠一次就是多收一次。
 /// </para>
+/// <para>
+/// 唯一的例外是 <see cref="CachedWrite1hTokens"/>：它是 <see cref="CachedWriteTokens"/> 里按 1 小时 TTL 写入的那部分，
+/// 是拆分而不是另一个桶（理由见 <see cref="LlmInput.CachedWrite1h"/>），累加时不能再加一遍。
+/// </para>
 /// </summary>
 public sealed record TokenUsage(
     int InputTokens = 0,
@@ -20,7 +24,8 @@ public sealed record TokenUsage(
     int CachedWriteTokens = 0,
     int InputAudioTokens = 0,
     int OutputAudioTokens = 0,
-    int OutputImageTokens = 0)
+    int OutputImageTokens = 0,
+    int CachedWrite1hTokens = 0)
 {
     /// <summary>是否有任何可记录的计数（全 0 的调用可跳过落库）。</summary>
     public bool HasAny =>

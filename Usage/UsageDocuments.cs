@@ -27,8 +27,17 @@ public sealed class TokenUsageInput
     [JsonPropertyName("cachedReadTokens")]
     public int CachedReadTokens { get; set; }
 
+    /// <summary>缓存写总量，不分 TTL。</summary>
     [JsonPropertyName("cachedWriteTokens")]
     public int CachedWriteTokens { get; set; }
+
+    /// <summary>
+    /// <see cref="CachedWriteTokens"/> 里按 1 小时 TTL 写入的那部分。为 0 时不写：绝大多数行没有它，
+    /// 历史行也没有这个键，写出来只是给每一行多占一段。
+    /// </summary>
+    [JsonPropertyName("cachedWrite1hTokens")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int CachedWrite1hTokens { get; set; }
 
     [JsonPropertyName("audioTokens")]
     public int AudioTokens { get; set; }
