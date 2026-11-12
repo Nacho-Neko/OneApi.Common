@@ -70,6 +70,19 @@ public sealed class SamplingCacheTarget
 {
     [Key(0)] public bool Enabled { get; set; } = true;
     [Key(1)] public int? Depth { get; set; }
+
+    /// <summary>这个断点的缓存时长。没升级的入口不带这一位，读出来是 5 分钟，与以前盖的一样。</summary>
+    [Key(2)] public SamplingCacheTtl Ttl { get; set; }
+}
+
+/// <summary>
+/// Anthropic <c>cache_control.ttl</c>，只有这两档。和库存里的缓存时长同号；不认识的值网关当成 5 分钟
+/// ——那是上游不写 <c>ttl</c> 时的默认，也是便宜的那一档。
+/// </summary>
+public enum SamplingCacheTtl
+{
+    FiveMinutes = 0,
+    OneHour = 1,
 }
 
 /// <summary>和库存里的合并模式同号。改号等于改线上契约。</summary>
