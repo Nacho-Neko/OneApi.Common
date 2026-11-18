@@ -117,8 +117,9 @@ public sealed record DumpPolicyDoc
     /// 一条 <c>ChatTransit.*</c> 就管住整个转码器，以后新加的错误不用改配置。</para>
     ///
     /// <para>没写或空数组就是不抓：抓包会把请求原文写进遥测，只在人明确打开时才抓。
-    /// 策略只在我们自己这边的失败里匹配；Vendor 报的错、号池状态、调用方断开，怎么写都匹配不上，
-    /// 要看 Vendor 报错就开时间窗按错误码抓。</para>
+    /// 策略在我们自己这边的失败里匹配，外加一个要原样点名才抓的 <c>vendor_bad_request</c>（Vendor 回了 400
+    /// 而我们认不出）；其余 Vendor 报的错、号池状态、调用方断开，怎么写都匹配不上，要看就开时间窗按错误码抓。
+    /// 判定在 <see cref="DumpErrorCodes.MatchesOnError"/>。</para>
     /// </summary>
     [JsonPropertyName("onError")] public string[]? OnError { get; init; }
 
@@ -231,7 +232,8 @@ public static class DumpErrorCodes
         // Provider 业务：来自 TaskReplyError.Code
         GatewayErrorCode.RateLimited,
         GatewayErrorCode.UpstreamError,
-        GatewayErrorCode.UpstreamBadRequest,
+        GatewayErrorCode.VendorBadRequest,
+        GatewayErrorCode.VendorRefused,
         GatewayErrorCode.ContextLengthExceeded,
         GatewayErrorCode.CircuitBroken,
         GatewayErrorCode.ParseError,
@@ -261,4 +263,42 @@ public static class DumpErrorCodes
                    or GatewayErrorCode.NoResponseBody
                    or GatewayErrorCode.WorkerError
                    or GatewayErrorCode.InvalidRequestBody);
+
+    /// <summary>
+    /// 报错抓包的策略匹配不匹配这次失败。网关（匹配）和控制台（预览）用同一份。
+    ///
+    /// <para>我们自己这边的失败（<see cref="IsOwnFailure"/>）按模式匹配，<c>*</c> 也算。</para>
+    ///
+    /// <para>Vendor 报的错里只有 <see cref="GatewayErrorCode.VendorBadRequest"/> 能抓，而且必须在策略里
+    /// <b>原样点名</b>，<c>*</c> 和 <c>vendor_*</c> 都带不上它：它是「Vendor 回了 400 而我们认不出」的那一堆，
+    /// 多半是我们的请求体有问题，值得抓；可量不由我们控制（某个 Vendor 下线一个模型就是一天上千条），
+    /// 所以要人明确写出来才开，不能被一条通配顺手带上。照样可以用 <c>!vendor_bad_request</c> 排除。</para>
+    ///
+    /// <para>其余 Vendor 报的错（拒答、限流、超窗、5xx）、号池状态怎么写都不匹配：那是 Vendor 对这次请求、
+    /// 这个账号的判断，看请求原文也修不了什么。要看就开时间窗按错误码抓。</para>
+    /// </summary>
+    public static bool MatchesOnError(IReadOnlyList<string> patterns, string? code)
+    {
+        if (code is null || patterns.Count == 0) return false;
+
+        if (IsOwnFailure(code))
+            return DumpErrorPatterns.Matches(patterns, code);
+
+        if (code != GatewayErrorCode.VendorBadRequest) return false;
+
+        var named = false;
+        foreach (var pattern in patterns)
+        {
+            if (pattern.Length == 0) continue;
+            if (pattern[0] == DumpErrorPatterns.Exclude)
+            {
+                if (DumpErrorPatterns.Matches(pattern.AsSpan(1), code)) return false;
+            }
+            else if (pattern == code)
+            {
+                named = true;
+            }
+        }
+        return named;
+    }
 }

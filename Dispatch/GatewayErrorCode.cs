@@ -34,7 +34,27 @@ public static class GatewayErrorCode
     public const string ModelNotFound = "model_not_found";
     public const string RateLimited = "rate_limited";
     public const string Unauthorized = "unauthorized";
-    public const string UpstreamBadRequest = "upstream_bad_request";
+    /// <summary>
+    /// Vendor 回了 400，而我们认不出是哪一种：多半是我们发过去的请求体它不认，要拿请求原文来查。
+    /// 认得出的（拒答、超窗）各有自己的码，不要落到这里——报错抓包按这个码抓「没见过的」。
+    /// </summary>
+    public const string VendorBadRequest = "vendor_bad_request";
+
+    /// <summary>
+    /// Vendor 收下了请求但不肯答（内容策略、判成不是求助）。跟请求体的写法无关，重发也一样，
+    /// 所以从 <see cref="VendorBadRequest"/> 里分出来，不进报错抓包。
+    /// </summary>
+    public const string VendorRefused = "vendor_refused";
+
+    /// <summary>
+    /// <see cref="VendorBadRequest"/> 在 2026-11-18 之前的 wire 值。没升级的 Provider 还在发，
+    /// 接收方用 <see cref="Normalize"/> 归一；所有 Provider 升级完就可以删。
+    /// </summary>
+    public const string LegacyUpstreamBadRequest = "upstream_bad_request";
+
+    [Obsolete("改名为 VendorBadRequest（wire 值也改成了 vendor_bad_request）。")]
+    public const string UpstreamBadRequest = VendorBadRequest;
+
     public const string ContextLengthExceeded = "context_length_exceeded";
     public const string UpstreamError = "upstream_error";
     public const string UpstreamTimeout = "upstream_timeout";
@@ -64,4 +84,11 @@ public static class GatewayErrorCode
     public const string TokenLimitExceeded = "token_limit_exceeded";
     public const string ModelNotAllowed = "model_not_allowed";
     public const string ReservationExpired = "reservation_expired";
+
+    /// <summary>
+    /// 把改名前的 wire 值换成现在的。滚动发布时新网关会收到旧 Provider 的码，不归一的话
+    /// 状态码映射、抓包规则、遥测都会把同一种错误当成两种。在收 Provider 回包的入口调一次。
+    /// </summary>
+    public static string? Normalize(string? code)
+        => code == LegacyUpstreamBadRequest ? VendorBadRequest : code;
 }
