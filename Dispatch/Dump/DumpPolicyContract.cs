@@ -234,6 +234,7 @@ public static class DumpErrorCodes
         GatewayErrorCode.VendorError,
         GatewayErrorCode.VendorBadRequest,
         GatewayErrorCode.VendorRefused,
+        GatewayErrorCode.VendorPolicyRejected,
         GatewayErrorCode.ContextLengthExceeded,
         GatewayErrorCode.CircuitBroken,
         GatewayErrorCode.ParseError,

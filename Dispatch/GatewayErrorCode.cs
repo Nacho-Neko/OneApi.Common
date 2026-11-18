@@ -42,9 +42,21 @@ public static class GatewayErrorCode
 
     /// <summary>
     /// Vendor 收下了请求但不肯答（内容策略、判成不是求助）。跟请求体的写法无关，重发也一样，
-    /// 所以从 <see cref="VendorBadRequest"/> 里分出来，不进报错抓包。
+    /// 所以从 <see cref="VendorBadRequest"/> 里分出来，不进报错抓包。不罚款。
     /// </summary>
     public const string VendorRefused = "vendor_refused";
+
+    /// <summary>
+    /// 拒绝：明确知道是 Vendor 平台自己的内容围栏拦了这次请求，模型没出过一个字。计费侧认这个码做惩罚性扣费。
+    /// <para>
+    /// 黑名单原则（2026-11-18 定的）：只有逐条登记过、明确知道是平台围栏触发的那个错误才报它，其余一律放过——
+    /// 不按状态码、不按文案里的字眼、不按「看起来像内容问题」去猜；拿不准的留在 <see cref="VendorRefused"/> 或
+    /// <see cref="VendorError"/>，宁可漏罚不可错罚。目前登记的只有一条：Factory 的 <c>content_policy_rejected</c>。
+    /// 别的渠道（包括 Agentspace 的 SKIPPED）要加，先拿到线上实例确认是围栏，再登记。
+    /// </para>
+    /// 和拒答（模型自己不答：200、有输出、照常按用量扣）不是一回事。
+    /// </summary>
+    public const string VendorPolicyRejected = "vendor_policy_rejected";
 
     public const string ContextLengthExceeded = "context_length_exceeded";
 
