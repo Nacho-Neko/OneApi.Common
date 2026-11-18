@@ -46,18 +46,30 @@ public static class GatewayErrorCode
     /// </summary>
     public const string VendorRefused = "vendor_refused";
 
-    /// <summary>
-    /// <see cref="VendorBadRequest"/> 在 2026-11-18 之前的 wire 值。没升级的 Provider 还在发，
-    /// 接收方用 <see cref="Normalize"/> 归一；所有 Provider 升级完就可以删。
-    /// </summary>
+    public const string ContextLengthExceeded = "context_length_exceeded";
+
+    /// <summary>Vendor 那边出了错（5xx、过载、403、回了空内容）：不是请求体的问题，换个账号或稍后再试可能就好。</summary>
+    public const string VendorError = "vendor_error";
+
+    /// <summary>等 Vendor 的回包等过了时限。</summary>
+    public const string VendorTimeout = "vendor_timeout";
+
+    // ── 2026-11-18 之前的 wire 值：对端一律叫 Vendor，「upstream」这个叫法不再用 ─────────────
+    // 没升级的 Provider 还在发这三个旧值，接收方用 Normalize 归一；用量日志里的历史行也还是旧值。
+    // 所有 Provider 升级完，Legacy* 和 Normalize 里对应的分支就可以删。
     public const string LegacyUpstreamBadRequest = "upstream_bad_request";
+    public const string LegacyUpstreamError = "upstream_error";
+    public const string LegacyUpstreamTimeout = "upstream_timeout";
 
     [Obsolete("改名为 VendorBadRequest（wire 值也改成了 vendor_bad_request）。")]
     public const string UpstreamBadRequest = VendorBadRequest;
 
-    public const string ContextLengthExceeded = "context_length_exceeded";
-    public const string UpstreamError = "upstream_error";
-    public const string UpstreamTimeout = "upstream_timeout";
+    [Obsolete("改名为 VendorError（wire 值也改成了 vendor_error）。")]
+    public const string UpstreamError = VendorError;
+
+    [Obsolete("改名为 VendorTimeout（wire 值也改成了 vendor_timeout）。")]
+    public const string UpstreamTimeout = VendorTimeout;
+
     public const string ConnectionError = "connection_error";
     public const string ParseError = "parse_error";
     public const string WorkerError = "worker_error";
@@ -89,6 +101,11 @@ public static class GatewayErrorCode
     /// 把改名前的 wire 值换成现在的。滚动发布时新网关会收到旧 Provider 的码，不归一的话
     /// 状态码映射、抓包规则、遥测都会把同一种错误当成两种。在收 Provider 回包的入口调一次。
     /// </summary>
-    public static string? Normalize(string? code)
-        => code == LegacyUpstreamBadRequest ? VendorBadRequest : code;
+    public static string? Normalize(string? code) => code switch
+    {
+        LegacyUpstreamBadRequest => VendorBadRequest,
+        LegacyUpstreamError => VendorError,
+        LegacyUpstreamTimeout => VendorTimeout,
+        _ => code,
+    };
 }

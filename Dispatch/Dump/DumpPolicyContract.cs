@@ -231,14 +231,14 @@ public static class DumpErrorCodes
         AnyTranscoderError,
         // Provider 业务：来自 TaskReplyError.Code
         GatewayErrorCode.RateLimited,
-        GatewayErrorCode.UpstreamError,
+        GatewayErrorCode.VendorError,
         GatewayErrorCode.VendorBadRequest,
         GatewayErrorCode.VendorRefused,
         GatewayErrorCode.ContextLengthExceeded,
         GatewayErrorCode.CircuitBroken,
         GatewayErrorCode.ParseError,
         GatewayErrorCode.WorkerError,
-        GatewayErrorCode.UpstreamTimeout,
+        GatewayErrorCode.VendorTimeout,
         // 流式专属
         GatewayErrorCode.StreamInterrupted,
         GatewayErrorCode.StreamFailed,
