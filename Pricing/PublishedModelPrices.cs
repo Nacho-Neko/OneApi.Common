@@ -163,6 +163,19 @@ public sealed class PublishedModelPrice
     [JsonPropertyName("capabilities")]
     public JsonElement? Capabilities { get; set; }
 
+    /// <summary>
+    /// 别名：渠道里对这个模型的别的叫法，在平台管理端的模型价格页上设。牌价是照厂家目录录的，渠道不一定这么叫——
+    /// 目录里是 <c>gemini-3.1-pro-preview</c>，有的渠道叫它 <c>gemini-3.1-pro</c>。名字比键长的（键后面接 <c>-…</c>）
+    /// 本来就对得上，比键短、或者干脆是另一个名字的对不上，就靠这个。
+    /// <para>
+    /// 对牌价时别名和键一样用（<see cref="ModelPriceTable.FindBest"/>）：相等、后面接 <c>-…</c>、去掉横线点号以后相等都算，几个都对得上取最长的。
+    /// 小写、不带渠道前缀；不会和别的行的键、别名重复（号池后台存的时候拦）。没有别名是 null，不写进文档——
+    /// 没设别名的行发布出去和加这个字段之前一字不差，读旧文档的一方也照常读。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("aliases")]
+    public List<string>? Aliases { get; set; }
+
     [JsonPropertyName("updatedAt")]
     public DateTime UpdatedAtUtc { get; set; }
 
