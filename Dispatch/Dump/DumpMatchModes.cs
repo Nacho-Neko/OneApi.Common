@@ -14,7 +14,5 @@ public static class DumpMatchModes
     /// <summary>每一条启用的规则都命中才抓。</summary>
     public const string All = "all";
 
-    public static IReadOnlyList<string> WireNames { get; } = [Any, All];
-
     public static bool IsKnown(string? mode) => mode is Any or All;
 }
