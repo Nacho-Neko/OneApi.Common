@@ -68,7 +68,7 @@ public static class DumpRuleKinds
 }
 
 /// <summary>
-/// 一条截获规则。规则之间为「或」；<c>Enabled=false</c> 的规则不参与匹配。
+/// 一条截获规则。规则之间怎么组合看 <see cref="DumpPolicyDoc.MatchMode"/>；<c>Enabled=false</c> 的规则不参与匹配。
 /// </summary>
 public sealed record DumpRuleDoc
 {
@@ -102,8 +102,11 @@ public sealed record DumpPolicyDoc
     /// </summary>
     [JsonPropertyName("until")] public DateTimeOffset? Until { get; init; }
 
-    /// <summary>目前只有 <c>any</c>（规则之间 OR）；留在 wire 上是为了向前兼容。</summary>
-    [JsonPropertyName("matchMode")] public string MatchMode { get; init; } = "any";
+    /// <summary>
+    /// 规则之间怎么组合：<c>any</c>（或，缺省）/ <c>all</c>（且），取值见 <see cref="DumpMatchModes"/>。
+    /// 网关不认识的值不会退回 <c>any</c>：那会把抓的范围放大，时间窗规则一条都不生效。
+    /// </summary>
+    [JsonPropertyName("matchMode")] public string MatchMode { get; init; } = DumpMatchModes.Any;
 
     [JsonPropertyName("rules")] public DumpRuleDoc[] Rules { get; init; } = [];
 
