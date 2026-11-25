@@ -12,7 +12,7 @@ namespace OneApi.Common.Usage;
 /// <para>跨服务契约（Yomi 的 <c>LlmUsage</c> / <c>EmbeddingUsage</c> 里嵌着它），Key 只能往后加。</para>
 /// </summary>
 [MessagePackObject]
-public sealed record LlmInput : IMergeableUsage<LlmInput>
+public sealed record LlmInput
 {
     /// <summary>未命中缓存的输入。</summary>
     [Key(0)] public long Prompt { get; init; }
@@ -32,15 +32,6 @@ public sealed record LlmInput : IMergeableUsage<LlmInput>
     /// </para>
     /// </summary>
     [Key(3)] public long CachedWrite1h { get; init; }
-
-    /// <summary>上游 usage 是累计口径，分次报的同一项取最大。</summary>
-    public LlmInput Merge(LlmInput later) => new()
-    {
-        Prompt        = Math.Max(Prompt, later.Prompt),
-        CachedRead    = Math.Max(CachedRead, later.CachedRead),
-        CachedWrite   = Math.Max(CachedWrite, later.CachedWrite),
-        CachedWrite1h = Math.Max(CachedWrite1h, later.CachedWrite1h),
-    };
 }
 
 /// <summary>
@@ -50,7 +41,7 @@ public sealed record LlmInput : IMergeableUsage<LlmInput>
 /// <para>跨服务契约，Key 只能往后加。</para>
 /// </summary>
 [MessagePackObject]
-public sealed record LlmOutput : IMergeableUsage<LlmOutput>
+public sealed record LlmOutput
 {
     /// <summary>正文。</summary>
     [Key(0)] public long Text { get; init; }
@@ -63,13 +54,4 @@ public sealed record LlmOutput : IMergeableUsage<LlmOutput>
 
     /// <summary>音频 token（单价通常远高于正文）。</summary>
     [Key(3)] public long Audio { get; init; }
-
-    /// <summary>上游 usage 是累计口径，分次报的同一项取最大。</summary>
-    public LlmOutput Merge(LlmOutput later) => new()
-    {
-        Text      = Math.Max(Text, later.Text),
-        Reasoning = Math.Max(Reasoning, later.Reasoning),
-        Image     = Math.Max(Image, later.Image),
-        Audio     = Math.Max(Audio, later.Audio),
-    };
 }

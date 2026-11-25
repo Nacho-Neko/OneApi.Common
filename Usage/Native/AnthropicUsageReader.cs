@@ -22,27 +22,22 @@ public sealed class AnthropicUsageReader() : NativeUsageReader<AnthropicFrame>(J
         if (usage is null)
             return;
 
-        // Anthropic 分两次报（输入在 message_start、产出在 message_delta），所以两半都是合并而不是取代。
+        // Anthropic 分两次报（输入在 message_start、产出在 message_delta），所以两半都是合并而不是取代：
+        // 每一项以最后一次报的为准，这一帧没带的项保留之前的（message_delta 只带产出时，缓存读不能被 0 盖掉）。
         //
         // input_tokens 已经是净的：cache_read 和 cache_creation 与它并列上报、不含在里面，原样用。
-        // 缓存读和缓存写是两份不同的输入，不是同一个数的两个名字：读 25944 同时写 7233 就是花了 33177，
-        // 两者取最大会只收大的那份、把另一份悄悄丢掉。
-        var cachedRead = usage.CacheReadInputTokens ?? 0;
-
+        // 缓存读和缓存写是两份不同的输入，不是同一个数的两个名字：读 25944 同时写 7233 就是花了 33177。
+        //
         // 缓存写按 TTL 拆在 cache_creation 里，cache_creation_input_tokens 是两档之和
         // （官方 prompt-caching「1-hour cache duration」）。总数缺了才拿拆分求和顶上；
         // 1 小时档是总数的子集，单独带出去是因为它的单价是另一个数。
-        var written1h = usage.CacheCreation?.Ephemeral1hInputTokens ?? 0;
+        var written1h = usage.CacheCreation?.Ephemeral1hInputTokens;
+        var written5m = usage.CacheCreation?.Ephemeral5mInputTokens;
         var cachedWrite = usage.CacheCreationInputTokens
-                          ?? written1h + (usage.CacheCreation?.Ephemeral5mInputTokens ?? 0);
-        if (usage.InputTokens is not null || cachedRead > 0 || cachedWrite > 0)
-            reading.Input.Merge(new LlmInput
-            {
-                Prompt = usage.InputTokens ?? 0,
-                CachedRead = cachedRead,
-                CachedWrite = cachedWrite,
-                CachedWrite1h = written1h,
-            });
+                          ?? (written1h is null && written5m is null ? null : (written1h ?? 0) + (written5m ?? 0));
+        var input = new LlmInputUpdate(usage.InputTokens, usage.CacheReadInputTokens, cachedWrite, written1h);
+        if (!input.IsEmpty)
+            reading.Input.Merge(input);
 
         // Anthropic 的 usage 是累计口径，message_start 报的是「发这一帧时已经产出多少」——
         // 一个偏小、但不固定的部分量，终值只在 message_delta 的根级 usage 上。
@@ -57,7 +52,7 @@ public sealed class AnthropicUsageReader() : NativeUsageReader<AnthropicFrame>(J
 
         // output_tokens 是毛的，含 thinking：剥出来单列，正文是剩下的那部分。
         var thinking = usage.OutputTokensDetails?.ThinkingTokens ?? 0;
-        reading.Output.Merge(new LlmOutput { Text = Math.Max(0, output - thinking), Reasoning = thinking });
+        reading.Output.Merge(new LlmOutputUpdate(Text: Math.Max(0, output - thinking), Reasoning: thinking));
     }
 }
 

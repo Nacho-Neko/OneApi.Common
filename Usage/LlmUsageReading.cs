@@ -30,7 +30,7 @@ public sealed class LlmUsageReading
     }
 
     /// <summary>
-    /// OneApi 线上的规范用量字典。累计口径，分次报，所以是合并。
+    /// OneApi 线上的规范用量字典。累计口径，分次报，所以是合并：每一项以最后一次报的为准，这一份里没有的键保留之前的。
     /// 输出键是毛产出（含思考和模态），在这里换算成互不重叠的净值；积分、总数之类的键不属于 LLM 用量，忽略。
     /// </summary>
     public void ObserveCanonical(IReadOnlyDictionary<string, long> usage)
@@ -40,21 +40,21 @@ public sealed class LlmUsageReading
         var prompt = Read(ProviderUsageKeys.InputTokens);
         var cachedRead = Read(ProviderUsageKeys.CacheReadInputTokens);
         var cachedWrite = Read(ProviderUsageKeys.CacheCreationInputTokens);
-        if (prompt is not null || cachedRead is not null || cachedWrite is not null)
-            Input.Merge(new LlmInput { Prompt = prompt ?? 0, CachedRead = cachedRead ?? 0, CachedWrite = cachedWrite ?? 0 });
+        var input = new LlmInputUpdate(prompt, cachedRead, cachedWrite);
+        if (!input.IsEmpty)
+            Input.Merge(input);
 
         if (Read(ProviderUsageKeys.OutputTokens) is { } gross)
         {
             var reasoning = Read(ProviderUsageKeys.ReasoningTokens) ?? 0;
             var image = Read(ProviderUsageKeys.OutputImageTokens) ?? 0;
             var audio = Read(ProviderUsageKeys.OutputAudioTokens) ?? 0;
-            Output.Merge(new LlmOutput
-            {
-                Text = Math.Max(0, gross - reasoning - image - audio),
-                Reasoning = reasoning,
-                Image = image,
-                Audio = audio,
-            });
+            // 毛产出是一整份：拆出来的四项一起报，缺的键就是这一份里没有那一类（0），不是没报。
+            Output.Merge(new LlmOutputUpdate(
+                Text: Math.Max(0, gross - reasoning - image - audio),
+                Reasoning: reasoning,
+                Image: image,
+                Audio: audio));
         }
     }
 }
