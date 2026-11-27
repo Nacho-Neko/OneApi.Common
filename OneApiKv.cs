@@ -6,7 +6,9 @@ namespace OneApi.Common;
 /// 当成数据库来看：桶是库，键的第一段是表。NATS 的桶是平的，桶下面不能再套桶；但桶里的键按点号分层，
 /// 订阅和授权都可以只对着某个前缀——<c>ratecard.&gt;</c> 就是「价格表这张表里的全部」。
 /// 所以不为每样数据各开一个桶（<c>oneapi-pricing</c>、<c>oneapi-xxx</c>……），都放在这一个库里，各占一个前缀。
-/// 现在只有价格表（<see cref="Pricing.ModelPriceKeys"/>）；OneApi 别的要落盘、要推给订阅者的设置以后加在这里。
+/// 现在有两张表：价格表（<see cref="Pricing.ModelPriceKeys"/>，平台的 Bff 也读，所以键写在这个共享库里）和网关的过滤器文档
+/// （<c>filter.*</c>，只有 OneApi 自己的网关和号池后台读，键在 OneApi 仓库的 <c>Gateway.Shared</c> 里，<c>FilterKv</c>）。
+/// OneApi 别的要落盘、要推给订阅者的设置、策略也放这个库，别放 Consul：要跨仓库读的，键写在这里。
 /// </para>
 /// <para>
 /// 这个库里的东西都是「不常改、不能自己消失」的：桶落盘、永不过期、每个键只留最新一条。
