@@ -275,6 +275,10 @@ public static class DumpErrorCodes
     /// Provider 读不懂网关发过去的请求（<c>invalid_request_body</c>）。
     /// Vendor 报的错、号池状态都不是。
     /// </summary>
+    /// <summary>报错抓包能抓、但必须在策略里原样点名的 Vendor 错误码，见 <see cref="MatchesOnError"/>。</summary>
+    public static IReadOnlyList<string> NamedOnly { get; } =
+        [GatewayErrorCode.VendorBadRequest, GatewayErrorCode.VendorPolicyRejected];
+
     public static bool IsOwnFailure(string? code)
         => code is not null
            && (code.StartsWith(TranscoderPrefix, StringComparison.Ordinal)
@@ -288,10 +292,16 @@ public static class DumpErrorCodes
     ///
     /// <para>我们自己这边的失败（<see cref="IsOwnFailure"/>）按模式匹配，<c>*</c> 也算。</para>
     ///
-    /// <para>Vendor 报的错里只有 <see cref="GatewayErrorCode.VendorBadRequest"/> 能抓，而且必须在策略里
-    /// <b>原样点名</b>，<c>*</c> 和 <c>vendor_*</c> 都带不上它：它是「Vendor 回了 400 而我们认不出」的那一堆，
-    /// 多半是我们的请求体有问题，值得抓；可量不由我们控制（某个 Vendor 下线一个模型就是一天上千条），
-    /// 所以要人明确写出来才开，不能被一条通配顺手带上。照样可以用 <c>!vendor_bad_request</c> 排除。</para>
+    /// <para>Vendor 报的错里只有 <see cref="NamedOnly"/> 这两个能抓，而且必须在策略里<b>原样点名</b>，
+    /// <c>*</c> 和 <c>vendor_*</c> 都带不上：量不由我们控制，要人明确写出来才开，不能被一条通配顺手带上。
+    /// 照样可以用 <c>!</c> 排除。</para>
+    /// <list type="bullet">
+    ///   <item><see cref="GatewayErrorCode.VendorBadRequest"/>：「Vendor 回了 400 而我们认不出」的那一堆，多半是我们的请求体有问题
+    ///   （某个 Vendor 下线一个模型就是一天上千条）。</item>
+    ///   <item><see cref="GatewayErrorCode.VendorPolicyRejected"/>：Vendor 的内容围栏拦了（目前只有 Factory 的
+    ///   <c>content_policy_rejected</c>）。围栏按固定句子拦，看请求原文能删出是哪一句，再写进 OneApi 网关的过滤规则，
+    ///   以后网关自己先拒、客户不吃罚金（2026-11-28 起）。</item>
+    /// </list>
     ///
     /// <para>其余 Vendor 报的错（拒答、限流、超窗、5xx）、号池状态怎么写都不匹配：那是 Vendor 对这次请求、
     /// 这个账号的判断，看请求原文也修不了什么。要看就开时间窗按错误码抓。</para>
@@ -303,7 +313,7 @@ public static class DumpErrorCodes
         if (IsOwnFailure(code))
             return DumpErrorPatterns.Matches(patterns, code);
 
-        if (code != GatewayErrorCode.VendorBadRequest) return false;
+        if (!NamedOnly.Contains(code, StringComparer.Ordinal)) return false;
 
         var named = false;
         foreach (var pattern in patterns)
