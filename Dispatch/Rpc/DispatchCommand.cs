@@ -85,4 +85,10 @@ public sealed class DispatchCommand
     /// 空表示这次没有要改请求的预设。旧调用方不带这个字段时为 null。
     /// </summary>
     [Key(9)] public SamplingRules? SamplingRules { get; set; }
+
+    /// <summary>
+    /// 终端客户端的请求头痕迹，网关拿它给请求分类（见 <see cref="ClientSignals"/>）。
+    /// edge 不带（内网调用、自家 PG chat、还没升级的 Tavern / ToApi）或客户端一个白名单头都没带时为 null。
+    /// </summary>
+    [Key(10)] public ClientSignals? Client { get; set; }
 }
