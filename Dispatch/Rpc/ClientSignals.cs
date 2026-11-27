@@ -12,6 +12,10 @@ namespace Meeko.Contracts.Demux.Dispatch;
 ///
 /// <para>只收白名单，不做「全收再剔除敏感头」：客户端自定义的鉴权头剔不干净。</para>
 ///
+/// <para><b>这个对象在不在，本身就是信息。</b> 在 = edge 看过客户端的请求头了，<see cref="Headers"/> 里没有的头就是客户端没带；
+/// 不在（<see cref="DispatchCommand.Client"/> 为 null）= edge 没转，网关对客户端一无所知。网关的规则靠这个区分
+/// 「没带 User-Agent 的客户端」和「没升级的 edge 发来的全部流量」，所以 edge 看过了就一定要填，哪怕一个头都没有。</para>
+///
 /// <para>Key 是数组下标。加字段只能追加到下一个空位。</para>
 /// </summary>
 [MessagePackObject]
@@ -19,7 +23,7 @@ public sealed class ClientSignals
 {
     /// <summary>
     /// 白名单里客户端带了的请求头。键是 <see cref="HeaderNames"/> 里的小写头名，值已按 <see cref="FromHeaders"/> 规整。
-    /// 一个都没带时整个 <see cref="ClientSignals"/> 为 null，不会出现空字典。
+    /// 客户端一个都没带时为 null。
     /// </summary>
     [Key(0)] public Dictionary<string, string>? Headers { get; set; }
 
@@ -56,8 +60,10 @@ public sealed class ClientSignals
     /// <para>同名多份用 <c>", "</c> 拼起来，和 HTTP 合并同名头的写法一样；空值不收。
     /// <c>referer</c> / <c>http-referer</c> 去掉查询串和片段：页面地址里常带令牌、会话 id，
     /// 不能跟着进遥测，认站点也用不着。</para>
+    ///
+    /// <para>总是返回一个对象：客户端一个白名单头都没带，也要让网关知道「edge 看过了、确实没有」。</para>
     /// </summary>
-    public static ClientSignals? FromHeaders(Func<string, IEnumerable<string?>?> read)
+    public static ClientSignals FromHeaders(Func<string, IEnumerable<string?>?> read)
     {
         Dictionary<string, string>? headers = null;
         foreach (var name in HeaderNames)
@@ -67,7 +73,7 @@ public sealed class ClientSignals
                 (headers ??= new(StringComparer.Ordinal))[name] = value;
         }
 
-        return headers is null ? null : new ClientSignals { Headers = headers };
+        return new ClientSignals { Headers = headers };
     }
 
     private static string? Normalize(string name, IEnumerable<string?>? values)

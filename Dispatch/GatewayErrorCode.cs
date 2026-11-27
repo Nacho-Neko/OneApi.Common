@@ -29,6 +29,24 @@ public static class GatewayErrorCode
 
     // 转码器的错误码不在这里：由 ChatTransit 自己定义（TransitErrorCode，都以 "ChatTransit." 开头）。
 
+    // ── 渠道准入（OneApi 网关按请求分类拒绝，见 OneApi 仓库 request-admission.md）──────────────
+
+    /// <summary>
+    /// 网关的分类器认出了这次请求是什么客户端，而这个渠道不收它。完整的码是前缀加分类标签
+    /// （<c>admission_rejected.agent.claude_code</c>）：拒绝原因就在码里，计费侧按码决定罚不罚，不另开字段。
+    /// 回给终端客户端时去掉标签只留 <c>admission_rejected</c>——告诉它被认成了什么，等于教它怎么绕开。
+    /// </summary>
+    public const string AdmissionRejectedPrefix = "admission_rejected.";
+
+    /// <summary>白名单原则的渠道拒掉了认不出来的请求时，标签位置上写这个。</summary>
+    public const string AdmissionUnlabeled = "unlabeled";
+
+    public static string AdmissionRejected(string? label)
+        => AdmissionRejectedPrefix + (label ?? AdmissionUnlabeled);
+
+    public static bool IsAdmissionRejected(string? code)
+        => code is not null && code.StartsWith(AdmissionRejectedPrefix, StringComparison.Ordinal);
+
     // ── Provider business errors ─────────────────────────────────────────────
     public const string CircuitBroken = "circuit_broken";
     public const string ModelNotFound = "model_not_found";

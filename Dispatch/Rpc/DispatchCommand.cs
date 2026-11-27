@@ -88,7 +88,8 @@ public sealed class DispatchCommand
 
     /// <summary>
     /// 终端客户端的请求头痕迹，网关拿它给请求分类（见 <see cref="ClientSignals"/>）。
-    /// edge 不带（内网调用、自家 PG chat、还没升级的 Tavern / ToApi）或客户端一个白名单头都没带时为 null。
+    /// null = edge 没转（内网调用、后台任务、还没升级的 Tavern / ToApi），网关对客户端一无所知；
+    /// 客户端一个白名单头都没带时<b>不是</b> null，而是一个 <see cref="ClientSignals.Headers"/> 为空的对象。
     /// </summary>
     [Key(10)] public ClientSignals? Client { get; set; }
 }
