@@ -4,7 +4,7 @@ namespace Meeko.Contracts.Demux.Dispatch;
 
 /// <summary>
 /// 给 OneApi 网关的请求分类器用的信号：分类器要看、而网关自己拿不到的东西，由产品 edge（Yomi 等）取好，
-/// 填进 <see cref="DispatchCommand.Signals"/>（设计见 OneApi 仓库 <c>src/OneApi.Gateway/request-classifier.md</c>）。
+/// 填进 <see cref="DispatchCommand.Signals"/>（设计见 OneApi 仓库 <c>src/OneApi.Gateway/request-filter.md</c>）。
 /// 分类器在 OneApi，edge 只负责搬运，不做判断。
 ///
 /// <para>现在只有一种信号：这次请求的 HTTP 请求头（<see cref="Headers"/>）。它只在 edge 收到的那次 HTTP 请求里，

@@ -29,23 +29,23 @@ public static class GatewayErrorCode
 
     // 转码器的错误码不在这里：由 ChatTransit 自己定义（TransitErrorCode，都以 "ChatTransit." 开头）。
 
-    // ── 渠道准入（OneApi 网关按请求分类拒绝，见 OneApi 仓库 request-classifier.md）──────────────
+    // ── 过滤器（OneApi 网关按每个 Vendor 的过滤规则拒绝请求，见 OneApi 仓库 request-filter.md）──────────
 
     /// <summary>
-    /// 网关的分类器认出了这次请求是什么客户端，而这个渠道不收它。完整的码是前缀加分类标签
-    /// （<c>classifier_rejected.agent.claude_code</c>）：拒绝原因就在码里，计费侧按码决定罚不罚，不另开字段。
-    /// 回给终端客户端时去掉标签只留 <c>classifier_rejected</c>——告诉它被认成了什么，等于教它怎么绕开。
+    /// 这个 Vendor 的过滤器拒了这次请求。完整的码是前缀加拒掉它的那条过滤规则的 id
+    /// （<c>filter_rejected.no-agents</c>）：拒绝原因就在码里，计费侧按码决定罚不罚，不另开字段。
+    /// 回给终端客户端时去掉规则 id 只留 <c>filter_rejected</c>——告诉它是哪条规则拒的，等于教它怎么绕开。
     /// </summary>
-    public const string ClassifierRejectedPrefix = "classifier_rejected.";
+    public const string FilterRejectedPrefix = "filter_rejected.";
 
-    /// <summary>白名单原则的渠道拒掉了认不出来的请求时，标签位置上写这个。</summary>
-    public const string ClassifierUnlabeled = "unlabeled";
+    /// <summary>没有规则成立、按默认动作拒掉时，规则 id 的位置上写这个。过滤规则不能叫这个名字。</summary>
+    public const string FilterDefaultRule = "default";
 
-    public static string ClassifierRejected(string? label)
-        => ClassifierRejectedPrefix + (label ?? ClassifierUnlabeled);
+    public static string FilterRejected(string? ruleId)
+        => FilterRejectedPrefix + (ruleId ?? FilterDefaultRule);
 
-    public static bool IsClassifierRejected(string? code)
-        => code is not null && code.StartsWith(ClassifierRejectedPrefix, StringComparison.Ordinal);
+    public static bool IsFilterRejected(string? code)
+        => code is not null && code.StartsWith(FilterRejectedPrefix, StringComparison.Ordinal);
 
     // ── Provider business errors ─────────────────────────────────────────────
     public const string CircuitBroken = "circuit_broken";
