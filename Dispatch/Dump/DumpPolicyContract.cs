@@ -89,8 +89,23 @@ public sealed record DumpRuleDoc
 }
 
 /// <summary>
-/// 截获策略文档。控制台写入 Consul KV <c>oneapi/config/dump</c>，
-/// 网关用 blocking query 监听同一个键。
+/// 截获策略文档在 NATS 上的位置：OneApi 的库（<see cref="OneApiKv.Bucket"/>，一个 JetStream KV 桶）里 <see cref="Table"/> 这张表，
+/// 整份文档就一个键。控制台（Meeko.Observability）带修订号写，网关 watch 这个键。
+///
+/// <para>不放 Consul（2026-11-27 起，之前在 <c>oneapi/config/dump</c>）：策略是 OneApi 自己的数据，网关本来就连 NATS；
+/// Consul 只管服务发现和注册。键写死、不开放配置：控制台和网关配得不一样，网关就一直收不到策略，而且看不出为什么。</para>
+/// </summary>
+public static class DumpKv
+{
+    /// <summary>表名：截获策略在库里的键都是 <c>dump.</c> 开头。</summary>
+    public const string Table = "dump";
+
+    /// <summary>整份截获策略。</summary>
+    public const string Key = Table + ".policy";
+}
+
+/// <summary>
+/// 截获策略文档。控制台写进 NATS 上 OneApi 的库（<see cref="DumpKv.Key"/>），网关 watch 同一个键。
 /// </summary>
 public sealed record DumpPolicyDoc
 {
