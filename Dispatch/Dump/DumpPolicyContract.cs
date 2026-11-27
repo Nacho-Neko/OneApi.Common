@@ -135,11 +135,21 @@ public sealed record DumpPolicyDoc
     /// 一条 <c>ChatTransit.*</c> 就管住整个转码器，以后新加的错误不用改配置。</para>
     ///
     /// <para>没写或空数组就是不抓：抓包会把请求原文写进遥测，只在人明确打开时才抓。
-    /// 策略在我们自己这边的失败里匹配，外加一个要原样点名才抓的 <c>vendor_bad_request</c>（Vendor 回了 400
-    /// 而我们认不出）；其余 Vendor 报的错、号池状态、调用方断开，怎么写都匹配不上，要看就开时间窗按错误码抓。
-    /// 判定在 <see cref="DumpErrorCodes.MatchesOnError"/>。</para>
+    /// 策略在我们自己这边的失败里匹配，外加两个要原样点名才抓的 Vendor 错误（<see cref="DumpErrorCodes.NamedOnly"/>：
+    /// <c>vendor_bad_request</c>、<c>vendor_policy_rejected</c>）；其余 Vendor 报的错、号池状态、调用方断开，
+    /// 怎么写都匹配不上，要看就开时间窗按错误码抓。判定在 <see cref="DumpErrorCodes.MatchesOnError"/>。</para>
     /// </summary>
     [JsonPropertyName("onError")] public string[]? OnError { get; init; }
+
+    /// <summary>
+    /// 报错抓包只抓这几个 Vendor（vendorKey，不分大小写）。不写或空数组 = 所有 Vendor。
+    /// 例：<c>{"onError": ["vendor_policy_rejected"], "onErrorVendors": ["factory"]}</c> 只抓 Factory 内容围栏拦下的请求。
+    ///
+    /// <para>单独一个字段、不写进 <see cref="OnError"/> 的模式里：错误码模式是控制台和网关共用的一套写法，
+    /// 混进 Vendor 名会让两边都得多认一种格式。时间窗的规则也能按 Vendor 筛，但时间窗要给每个请求备着回包，
+    /// 不适合一直开着；报错抓包只在失败时用请求原文，可以常开。</para>
+    /// </summary>
+    [JsonPropertyName("onErrorVendors")] public string[]? OnErrorVendors { get; init; }
 
     [JsonPropertyName("updatedAt")] public DateTimeOffset? UpdatedAt { get; init; }
 }
@@ -268,6 +278,10 @@ public static class DumpErrorCodes
         => Reachable.Contains(code, StringComparer.Ordinal)
            || (code.StartsWith(TranscoderPrefix, StringComparison.Ordinal) && DumpErrorPatterns.IsValid(code));
 
+    /// <summary>报错抓包能抓、但必须在策略里原样点名的 Vendor 错误码，见 <see cref="MatchesOnError"/>。</summary>
+    public static IReadOnlyList<string> NamedOnly { get; } =
+        [GatewayErrorCode.VendorBadRequest, GatewayErrorCode.VendorPolicyRejected];
+
     /// <summary>
     /// 这个错误码是不是我们自己这边的失败——报错抓包的策略只在这些里匹配：
     /// 转码器的（<see cref="TranscoderPrefix"/> 开头）、网关自己抛了异常或派发器出错（<c>internal_error</c>）、
@@ -275,10 +289,6 @@ public static class DumpErrorCodes
     /// Provider 读不懂网关发过去的请求（<c>invalid_request_body</c>）。
     /// Vendor 报的错、号池状态都不是。
     /// </summary>
-    /// <summary>报错抓包能抓、但必须在策略里原样点名的 Vendor 错误码，见 <see cref="MatchesOnError"/>。</summary>
-    public static IReadOnlyList<string> NamedOnly { get; } =
-        [GatewayErrorCode.VendorBadRequest, GatewayErrorCode.VendorPolicyRejected];
-
     public static bool IsOwnFailure(string? code)
         => code is not null
            && (code.StartsWith(TranscoderPrefix, StringComparison.Ordinal)
