@@ -3,9 +3,13 @@ using MessagePack;
 namespace Meeko.Contracts.Demux.Dispatch;
 
 /// <summary>
-/// 终端客户端留下的、用来分辨它是什么客户端的痕迹。产品 edge（Yomi 等）从客户端的 HTTP 请求里取出来，
-/// 填进 <see cref="DispatchCommand.Client"/>；OneApi 网关据此给请求分类（设计见 OneApi 仓库
-/// <c>src/OneApi.Gateway/request-admission.md</c>）。分类器在 OneApi，edge 只负责搬运。
+/// 给 OneApi 网关的请求分类器用的信号：分类器要看、而网关自己拿不到的东西，由产品 edge（Yomi 等）取好，
+/// 填进 <see cref="DispatchCommand.Signals"/>（设计见 OneApi 仓库 <c>src/OneApi.Gateway/request-admission.md</c>）。
+/// 分类器在 OneApi，edge 只负责搬运，不做判断。
+///
+/// <para>现在只有一种信号：这次请求的 HTTP 请求头（<see cref="Headers"/>）。它只在 edge 收到的那次 HTTP 请求里，
+/// 到了网关就是一次 gRPC 调用，看不到了。以后 edge 才拿得到的别的信号也加在这个类型里；
+/// 请求体里的信号不走这里，网关自己从 <see cref="DispatchCommand.PayloadJson"/> 读。</para>
 ///
 /// <para><b>白名单和取值规则放在这里，不放在 edge。</b> 哪些请求头离开 edge、以什么样子到网关，是这一跳契约的一部分：
 /// 写在 edge 里，每个 edge 各抄一份，迟早不一致。</para>
@@ -13,13 +17,13 @@ namespace Meeko.Contracts.Demux.Dispatch;
 /// <para>只收白名单，不做「全收再剔除敏感头」：客户端自定义的鉴权头剔不干净。</para>
 ///
 /// <para><b>这个对象在不在，本身就是信息。</b> 在 = edge 看过客户端的请求头了，<see cref="Headers"/> 里没有的头就是客户端没带；
-/// 不在（<see cref="DispatchCommand.Client"/> 为 null）= edge 没转，网关对客户端一无所知。网关的规则靠这个区分
+/// 不在（<see cref="DispatchCommand.Signals"/> 为 null）= edge 没转，网关对客户端一无所知。网关的规则靠这个区分
 /// 「没带 User-Agent 的客户端」和「没升级的 edge 发来的全部流量」，所以 edge 看过了就一定要填，哪怕一个头都没有。</para>
 ///
 /// <para>Key 是数组下标。加字段只能追加到下一个空位。</para>
 /// </summary>
 [MessagePackObject]
-public sealed class ClientSignals
+public sealed class ClassifierSignals
 {
     /// <summary>
     /// 白名单里客户端带了的请求头。键是 <see cref="HeaderNames"/> 里的小写头名，值已按 <see cref="FromHeaders"/> 规整。
@@ -63,7 +67,7 @@ public sealed class ClientSignals
     ///
     /// <para>总是返回一个对象：客户端一个白名单头都没带，也要让网关知道「edge 看过了、确实没有」。</para>
     /// </summary>
-    public static ClientSignals FromHeaders(Func<string, IEnumerable<string?>?> read)
+    public static ClassifierSignals FromHeaders(Func<string, IEnumerable<string?>?> read)
     {
         Dictionary<string, string>? headers = null;
         foreach (var name in HeaderNames)
@@ -73,7 +77,7 @@ public sealed class ClientSignals
                 (headers ??= new(StringComparer.Ordinal))[name] = value;
         }
 
-        return new ClientSignals { Headers = headers };
+        return new ClassifierSignals { Headers = headers };
     }
 
     private static string? Normalize(string name, IEnumerable<string?>? values)

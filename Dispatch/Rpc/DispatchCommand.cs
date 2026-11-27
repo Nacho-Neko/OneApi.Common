@@ -87,9 +87,9 @@ public sealed class DispatchCommand
     [Key(9)] public SamplingRules? SamplingRules { get; set; }
 
     /// <summary>
-    /// 终端客户端的请求头痕迹，网关拿它给请求分类（见 <see cref="ClientSignals"/>）。
+    /// 给网关的请求分类器用的信号（见 <see cref="ClassifierSignals"/>），现在是这次请求的 HTTP 请求头。
     /// null = edge 没转（内网调用、后台任务、还没升级的 Tavern / ToApi），网关对客户端一无所知；
-    /// 客户端一个白名单头都没带时<b>不是</b> null，而是一个 <see cref="ClientSignals.Headers"/> 为空的对象。
+    /// 客户端一个白名单头都没带时<b>不是</b> null，而是一个 <see cref="ClassifierSignals.Headers"/> 为空的对象。
     /// </summary>
-    [Key(10)] public ClientSignals? Client { get; set; }
+    [Key(10)] public ClassifierSignals? Signals { get; set; }
 }
